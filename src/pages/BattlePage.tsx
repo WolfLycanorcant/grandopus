@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useGameStore } from '../stores/gameStore'
 import { BattleSetup } from '../components/BattleSetup'
 import { BattleExecution } from '../components/BattleExecution'
 import { BattleResults } from '../components/BattleResults'
-import { Swords, Play, RotateCcw } from 'lucide-react'
+import { Swords, Play, RotateCcw, Box } from 'lucide-react'
 
 export function BattlePage() {
   const { 
@@ -67,15 +68,25 @@ export function BattlePage() {
           </p>
         </div>
         
-        {battlePhase !== 'setup' && (
-          <button
-            onClick={handleNewBattle}
-            className="btn-outline flex items-center"
+        <div className="flex items-center space-x-3">
+          <Link
+            to="/battle3d"
+            className="btn-secondary flex items-center"
           >
-            <RotateCcw className="h-4 w-4 mr-2" />
-            New Battle
-          </button>
-        )}
+            <Box className="h-4 w-4 mr-2" />
+            3D Battle
+          </Link>
+          
+          {battlePhase !== 'setup' && (
+            <button
+              onClick={handleNewBattle}
+              className="btn-outline flex items-center"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              New Battle
+            </button>
+          )}
+        </div>
       </div>
       
       {/* Error Display */}

@@ -3,16 +3,19 @@ import {
   Race, 
   Archetype, 
   WeaponProficiency, 
-  WeaponType, 
   FormationPosition,
   StatusEffect,
-  UnitExperience,
-  EquipmentSlot
+  UnitExperience
 } from './types';
+import { WeaponType, EquipmentSlot } from '../equipment/types';
 import { getRacialTraits } from './RaceData';
 import { getArchetypeData, calculateStatAtLevel } from './ArchetypeData';
 import { EquipmentManager } from '../equipment';
+import { EmberManager } from '../equipment/EmberManager';
 import { SkillManager } from '../skills/SkillManager';
+import { AchievementManager } from '../achievements/AchievementManager';
+import { RelationshipManager } from '../relationships/RelationshipManager';
+import { PromotionManager } from './PromotionManager';
 import { 
   InvalidUnitStatsException,
   InvalidRaceException,
@@ -48,9 +51,19 @@ export class Unit {
   // Equipment system
   public equipment: Map<EquipmentSlot, any>;
   public equipmentManager: EquipmentManager;
+  public emberManager: EmberManager;
   
   // Skills system
   public skillManager: SkillManager;
+  
+  // Achievement system
+  public achievementManager: AchievementManager;
+  
+  // Relationship system
+  public relationshipManager: RelationshipManager;
+  
+  // Promotion system
+  public promotionManager: PromotionManager;
   
   // Formation and positioning
   public formationPosition?: FormationPosition;
@@ -98,12 +111,22 @@ export class Unit {
     // Initialize equipment
     this.equipment = new Map();
     this.equipmentManager = new EquipmentManager(this);
+    this.emberManager = new EmberManager(this);
     
     // Initialize skills
     this.skillManager = new SkillManager(this);
     this.skillManager.addJobPoints(this.experience.jobPoints);
     this.unlockedSkills = new Set();
     this.availableJobPoints = this.experience.jobPoints;
+    
+    // Initialize achievements
+    this.achievementManager = new AchievementManager(this);
+    
+    // Initialize relationships
+    this.relationshipManager = new RelationshipManager(this);
+    
+    // Initialize promotions
+    this.promotionManager = new PromotionManager(this);
   }
 
   /**
@@ -274,6 +297,33 @@ export class Unit {
     stats.skl += skillBonuses.skl || 0;
     stats.arm += skillBonuses.arm || 0;
     stats.ldr += skillBonuses.ldr || 0;
+    
+    // Add achievement bonuses
+    const achievementBonuses = this.achievementManager.getAchievementStatBonuses();
+    stats.hp += achievementBonuses.hp || 0;
+    stats.str += achievementBonuses.str || 0;
+    stats.mag += achievementBonuses.mag || 0;
+    stats.skl += achievementBonuses.skl || 0;
+    stats.arm += achievementBonuses.arm || 0;
+    stats.ldr += achievementBonuses.ldr || 0;
+    
+    // Add relationship bonuses
+    const relationshipBonuses = this.relationshipManager.getRelationshipStatBonuses();
+    stats.hp += relationshipBonuses.hp || 0;
+    stats.str += relationshipBonuses.str || 0;
+    stats.mag += relationshipBonuses.mag || 0;
+    stats.skl += relationshipBonuses.skl || 0;
+    stats.arm += relationshipBonuses.arm || 0;
+    stats.ldr += relationshipBonuses.ldr || 0;
+    
+    // Add promotion bonuses
+    const promotionBonuses = this.promotionManager.getPromotionStatBonuses();
+    stats.hp += promotionBonuses.hp || 0;
+    stats.str += promotionBonuses.str || 0;
+    stats.mag += promotionBonuses.mag || 0;
+    stats.skl += promotionBonuses.skl || 0;
+    stats.arm += promotionBonuses.arm || 0;
+    stats.ldr += promotionBonuses.ldr || 0;
     
     // TODO: Add status effect modifiers
     

@@ -1,9 +1,9 @@
-import { 
-  EquipmentLoadout, 
-  EquipmentStats, 
-  EquipmentSlot, 
-  WeaponProperties, 
-  ArmorProperties, 
+import {
+  EquipmentLoadout,
+  EquipmentStats,
+  EquipmentSlot,
+  WeaponProperties,
+  ArmorProperties,
   AccessoryProperties,
   StatBonus,
   SpecialEffect
@@ -17,7 +17,7 @@ import { getArmor, getAccessory } from './ArmorData'
  */
 export class EquipmentManager {
   private unit: Unit
-  private equipment: EquipmentLoadout
+  private equipment: Record<string, WeaponProperties | ArmorProperties | AccessoryProperties>
 
   constructor(unit: Unit) {
     this.unit = unit
@@ -30,7 +30,7 @@ export class EquipmentManager {
   public equipItem(itemId: string, slot: EquipmentSlot): boolean {
     // Get the item data
     let item: WeaponProperties | ArmorProperties | AccessoryProperties | null = null
-    
+
     if (slot === EquipmentSlot.WEAPON || slot === EquipmentSlot.OFF_HAND) {
       item = getWeapon(itemId)
     } else if (slot === EquipmentSlot.ACCESSORY_1 || slot === EquipmentSlot.ACCESSORY_2) {
@@ -55,7 +55,7 @@ export class EquipmentManager {
 
     // Equip the new item
     this.equipment[slot] = item
-    
+
     // Update unit's equipment map
     this.unit.equipment.set(slot, item)
 
@@ -87,7 +87,7 @@ export class EquipmentManager {
     // Check stat requirements
     if ('statRequirements' in item && item.statRequirements) {
       const currentStats = this.unit.getCurrentStats()
-      
+
       for (const [stat, required] of Object.entries(item.statRequirements)) {
         if (currentStats[stat as keyof StatBonus] < required) {
           return false
@@ -151,10 +151,10 @@ export class EquipmentManager {
     }> = []
 
     // Calculate bonuses from each equipped item
-    for (const item of Object.values(this.equipment)) {
+    for (const [slot, item] of Object.entries(this.equipment)) {
       if (!item) continue
 
-      // Add stat bonuses
+      // Add stat bonuses from item
       if (item.statBonuses) {
         for (const [stat, bonus] of Object.entries(item.statBonuses)) {
           if (totalStatBonuses[stat as keyof StatBonus] !== undefined) {
@@ -173,9 +173,37 @@ export class EquipmentManager {
         totalMagicResistance += item.magicResistance
       }
 
-      // Add special effects
+      // Add special effects from item
       if ('specialEffects' in item && item.specialEffects) {
         specialEffects.push(...item.specialEffects)
+      }
+
+      // Add ember bonuses for weapons
+      if ('embeddedEmbers' in item && item.embeddedEmbers) {
+        const equipmentSlot = slot as EquipmentSlot
+        const emberBonuses = this.unit.emberManager.calculateEmberBonuses(equipmentSlot)
+
+        // Add ember stat bonuses
+        for (const [stat, bonus] of Object.entries(emberBonuses.statBonuses)) {
+          if (totalStatBonuses[stat as keyof StatBonus] !== undefined) {
+            totalStatBonuses[stat as keyof StatBonus]! += bonus
+          }
+        }
+
+        // Add ember special effects
+        for (const effect of emberBonuses.specialEffects) {
+          specialEffects.push({
+            id: `ember_${effect.name.toLowerCase().replace(/\s+/g, '_')}`,
+            name: effect.name,
+            description: effect.description,
+            trigger: effect.trigger as any,
+            effect: {
+              type: 'buff',
+              value: 0,
+              target: 'self'
+            }
+          })
+        }
       }
     }
 
@@ -200,13 +228,19 @@ export class EquipmentManager {
     }
 
     const proficiency = this.unit.getWeaponProficiency(weapon.type)
-    if (!proficiency) {
-      return weapon.baseDamage
+    let baseDamage = weapon.baseDamage
+
+    if (proficiency) {
+      // Base damage + proficiency bonus
+      const proficiencyBonus = Math.floor(weapon.baseDamage * (proficiency.level / 100))
+      baseDamage += proficiencyBonus
     }
 
-    // Base damage + proficiency bonus
-    const proficiencyBonus = Math.floor(weapon.baseDamage * (proficiency.level / 100))
-    return weapon.baseDamage + proficiencyBonus
+    // Add ember damage bonuses
+    const emberBonuses = this.unit.emberManager.calculateEmberBonuses(EquipmentSlot.WEAPON)
+    baseDamage += emberBonuses.damageBonus
+
+    return baseDamage
   }
 
   /**
@@ -219,7 +253,7 @@ export class EquipmentManager {
     }
 
     let hitBonus = weapon.hitBonus || 0
-    
+
     const proficiency = this.unit.getWeaponProficiency(weapon.type)
     if (proficiency) {
       // Add proficiency hit bonus
@@ -239,7 +273,7 @@ export class EquipmentManager {
     }
 
     let critBonus = weapon.critBonus || 0
-    
+
     const proficiency = this.unit.getWeaponProficiency(weapon.type)
     if (proficiency) {
       // Add proficiency crit bonus at higher levels
@@ -276,13 +310,13 @@ export class EquipmentManager {
     const equippedCount = Object.keys(this.equipment).length
     const weapon = this.getEquippedWeapon()
     const stats = this.calculateEquipmentStats()
-    
+
     let summary = `${equippedCount}/8 slots equipped`
-    
+
     if (weapon) {
       summary += ` | ${weapon.name}`
     }
-    
+
     if (stats.totalArmorValue > 0) {
       summary += ` | ${stats.totalArmorValue} armor`
     }
@@ -295,7 +329,7 @@ export class EquipmentManager {
    */
   public toJSON(): any {
     const equipmentData: any = {}
-    
+
     for (const [slot, item] of Object.entries(this.equipment)) {
       if (item) {
         equipmentData[slot] = item.id
@@ -310,7 +344,7 @@ export class EquipmentManager {
    */
   public fromJSON(data: any): void {
     this.equipment = {}
-    
+
     for (const [slot, itemId] of Object.entries(data)) {
       if (typeof itemId === 'string') {
         this.equipItem(itemId, slot as EquipmentSlot)

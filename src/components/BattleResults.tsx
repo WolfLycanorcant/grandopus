@@ -17,19 +17,19 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
     experience: false,
     statistics: false
   })
-  
+
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
     }))
   }
-  
+
   const filteredLog = battleLog.filter(entry => {
     if (logFilter === 'all') return true
     return entry.type === logFilter
   })
-  
+
   const getLogEntryColor = (type: BattleLogEntry['type']) => {
     switch (type) {
       case 'attack': return 'text-red-400'
@@ -39,7 +39,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
       default: return 'text-slate-300'
     }
   }
-  
+
   const getVictoryIcon = () => {
     switch (result.victoryCondition) {
       case 'elimination':
@@ -50,7 +50,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
         return <Trophy className="h-8 w-8 text-primary-400" />
     }
   }
-  
+
   const getVictoryMessage = () => {
     switch (result.victoryCondition) {
       case 'elimination':
@@ -61,7 +61,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
         return 'Victory Achieved!'
     }
   }
-  
+
   return (
     <div className="space-y-6">
       {/* Victory Banner */}
@@ -70,28 +70,28 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
           <div className="flex justify-center mb-4">
             {getVictoryIcon()}
           </div>
-          
+
           <h2 className="text-3xl font-bold text-white mb-2">
             {result.winner.name} Wins!
           </h2>
-          
+
           <p className="text-lg text-slate-300 mb-4">
             {getVictoryMessage()}
           </p>
-          
+
           <div className="flex justify-center items-center space-x-8 text-sm">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary-400">{result.rounds}</div>
               <div className="text-slate-400">Rounds</div>
             </div>
-            
+
             <div className="text-center">
               <div className="text-2xl font-bold text-green-400">
                 {result.casualties.winner.length + result.casualties.loser.length}
               </div>
               <div className="text-slate-400">Total Casualties</div>
             </div>
-            
+
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-400">{result.experience.winner}</div>
               <div className="text-slate-400">EXP Gained</div>
@@ -99,7 +99,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
           </div>
         </div>
       </div>
-      
+
       {/* Battle Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Winner */}
@@ -111,15 +111,15 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
             </h3>
           </div>
           <div className="card-body">
-            <BattleSquadSummary 
-              squad={result.winner} 
+            <BattleSquadSummary
+              squad={result.winner}
               casualties={result.casualties.winner}
               experience={result.experience.winner}
               isWinner={true}
             />
           </div>
         </div>
-        
+
         {/* Loser */}
         <div className="card">
           <div className="card-header">
@@ -129,8 +129,8 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
             </h3>
           </div>
           <div className="card-body">
-            <BattleSquadSummary 
-              squad={result.loser} 
+            <BattleSquadSummary
+              squad={result.loser}
               casualties={result.casualties.loser}
               experience={result.experience.loser}
               isWinner={false}
@@ -138,7 +138,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
           </div>
         </div>
       </div>
-      
+
       {/* Detailed Results */}
       <div className="space-y-4">
         {/* Casualties */}
@@ -155,7 +155,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
               {expandedSections.casualties ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
             </button>
           </div>
-          
+
           {expandedSections.casualties && (
             <div className="card-body">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -178,7 +178,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
                     </div>
                   )}
                 </div>
-                
+
                 <div>
                   <h4 className="text-sm font-medium text-slate-300 mb-3">
                     {result.loser.name} Casualties ({result.casualties.loser.length})
@@ -202,7 +202,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
             </div>
           )}
         </div>
-        
+
         {/* Experience Rewards */}
         <div className="card">
           <div className="card-header">
@@ -217,7 +217,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
               {expandedSections.experience ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
             </button>
           </div>
-          
+
           {expandedSections.experience && (
             <div className="card-body">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -232,7 +232,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
                     Distributed among all surviving units
                   </p>
                 </div>
-                
+
                 <div className="bg-slate-700 rounded-lg p-4">
                   <h4 className="text-lg font-medium text-slate-300 mb-2">
                     {result.loser.name} (Defeated)
@@ -248,7 +248,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
             </div>
           )}
         </div>
-        
+
         {/* Battle Statistics */}
         <div className="card">
           <div className="card-header">
@@ -263,7 +263,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
               {expandedSections.statistics ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
             </button>
           </div>
-          
+
           {expandedSections.statistics && (
             <div className="card-body">
               <BattleStatistics statistics={result.statistics} />
@@ -271,7 +271,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
           )}
         </div>
       </div>
-      
+
       {/* Battle Log */}
       <div className="card">
         <div className="card-header">
@@ -289,7 +289,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
                 <option value="damage">Damage Only</option>
                 <option value="info">Info Only</option>
               </select>
-              
+
               {/* Toggle Detailed View */}
               <button
                 onClick={() => setShowDetailedLog(!showDetailedLog)}
@@ -301,7 +301,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
             </div>
           </div>
         </div>
-        
+
         <div className="card-body">
           <div className="battle-log max-h-96 overflow-y-auto">
             {filteredLog.map((entry, index) => (
@@ -313,7 +313,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
                     </span>
                     <span>{entry.message}</span>
                   </div>
-                  
+
                   {showDetailedLog && entry.details && (
                     <div className="text-xs text-slate-500 ml-4">
                       {entry.damage && `${entry.damage} dmg`}
@@ -321,7 +321,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
                     </div>
                   )}
                 </div>
-                
+
                 {showDetailedLog && entry.details && (
                   <div className="mt-1 text-xs text-slate-600">
                     {JSON.stringify(entry.details, null, 2)}
@@ -332,7 +332,7 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
           </div>
         </div>
       </div>
-      
+
       {/* Actions */}
       <div className="text-center">
         <button
@@ -348,20 +348,20 @@ export function BattleResults({ result, battleLog, onNewBattle }: BattleResultsP
 }
 
 // Battle Squad Summary Component
-function BattleSquadSummary({ 
-  squad, 
-  casualties, 
-  experience, 
-  isWinner 
-}: { 
+function BattleSquadSummary({
+  squad,
+  casualties,
+  experience,
+  isWinner
+}: {
   squad: any
   casualties: any[]
   experience: number
-  isWinner: boolean 
+  isWinner: boolean
 }) {
   const stats = squad.getStats()
   const survivors = squad.getUnits().filter((unit: any) => unit.isAlive())
-  
+
   return (
     <div className="space-y-4">
       {/* Summary Stats */}
@@ -370,18 +370,18 @@ function BattleSquadSummary({
           <div className="text-lg font-bold text-white">{survivors.length}</div>
           <div className="text-xs text-slate-400">Survivors</div>
         </div>
-        
+
         <div className="bg-slate-700 rounded-lg p-3 text-center">
           <div className="text-lg font-bold text-red-400">{casualties.length}</div>
           <div className="text-xs text-slate-400">Casualties</div>
         </div>
-        
+
         <div className="bg-slate-700 rounded-lg p-3 text-center">
           <div className="text-lg font-bold text-blue-400">+{experience}</div>
           <div className="text-xs text-slate-400">EXP</div>
         </div>
       </div>
-      
+
       {/* Survivors List */}
       {survivors.length > 0 && (
         <div>
@@ -410,9 +410,9 @@ function BattleSquadSummary({
 
 // Battle Statistics Component
 function BattleStatistics({ statistics }: { statistics: any }) {
-  const damageEntries = Object.entries(statistics.totalDamageDealt || {})
-  const critEntries = Object.entries(statistics.criticalHits || {})
-  
+  const damageEntries = Object.entries(statistics.totalDamageDealt || {}) as [string, number][]
+  const critEntries = Object.entries(statistics.criticalHits || {}) as [string, number][]
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Damage Dealt */}
@@ -431,7 +431,7 @@ function BattleStatistics({ statistics }: { statistics: any }) {
           </div>
         )}
       </div>
-      
+
       {/* Critical Hits */}
       <div>
         <h4 className="text-sm font-medium text-slate-300 mb-3">Critical Hits</h4>

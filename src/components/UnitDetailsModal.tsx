@@ -2,8 +2,12 @@ import React, { useState } from 'react'
 import { Unit } from '../core/units'
 import { getRacialTraits } from '../core/units/RaceData'
 import { getArchetypeData } from '../core/units/ArchetypeData'
+import { ResourceType } from '../core/overworld/types'
 import { EquipmentPanel } from './EquipmentPanel'
 import { SkillTreePanel } from './SkillTreePanel'
+import { AchievementPanel } from './AchievementPanel'
+import { RelationshipPanel } from './RelationshipPanel'
+import { PromotionPanel } from './PromotionPanel'
 import { X, Shield, Sword, Zap, Target, Crown, Heart, Star, Award, Flame, Package } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -13,7 +17,7 @@ interface UnitDetailsModalProps {
 }
 
 export function UnitDetailsModal({ unit, onClose }: UnitDetailsModalProps) {
-  const [activeTab, setActiveTab] = useState<'stats' | 'equipment' | 'skills'>('stats')
+  const [activeTab, setActiveTab] = useState<'stats' | 'equipment' | 'skills' | 'achievements' | 'relationships' | 'promotions'>('stats')
   const [, forceUpdate] = useState({})
   
   const stats = unit.getCurrentStats()
@@ -120,6 +124,42 @@ export function UnitDetailsModal({ unit, onClose }: UnitDetailsModalProps) {
             >
               <Star className="h-4 w-4 mr-2" />
               Skills
+            </button>
+            <button
+              onClick={() => setActiveTab('achievements')}
+              className={clsx(
+                'flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors',
+                activeTab === 'achievements'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-400 hover:text-slate-300'
+              )}
+            >
+              <Award className="h-4 w-4 mr-2" />
+              Achievements
+            </button>
+            <button
+              onClick={() => setActiveTab('relationships')}
+              className={clsx(
+                'flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors',
+                activeTab === 'relationships'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-400 hover:text-slate-300'
+              )}
+            >
+              <Heart className="h-4 w-4 mr-2" />
+              Relationships
+            </button>
+            <button
+              onClick={() => setActiveTab('promotions')}
+              className={clsx(
+                'flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors',
+                activeTab === 'promotions'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-400 hover:text-slate-300'
+              )}
+            >
+              <Crown className="h-4 w-4 mr-2" />
+              Promotions
             </button>
           </div>
 
@@ -387,13 +427,46 @@ export function UnitDetailsModal({ unit, onClose }: UnitDetailsModalProps) {
                 onEquipmentChange={handleEquipmentChange}
               />
             </div>
-          ) : (
+          ) : activeTab === 'skills' ? (
             /* Skills Tab */
             <div>
               <h3 className="text-lg font-semibold text-white mb-4">Skill Trees & Abilities</h3>
               <SkillTreePanel 
                 unit={unit} 
                 onSkillLearned={handleEquipmentChange}
+              />
+            </div>
+          ) : activeTab === 'achievements' ? (
+            /* Achievements Tab */
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4">Achievements & Progress</h3>
+              <AchievementPanel unit={unit} />
+            </div>
+          ) : activeTab === 'relationships' ? (
+            /* Relationships Tab */
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4">Relationships & Bonds</h3>
+              <RelationshipPanel unit={unit} />
+            </div>
+          ) : (
+            /* Promotions Tab */
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4">Unit Promotions</h3>
+              <PromotionPanel 
+                unit={unit} 
+                playerResources={{
+                  [ResourceType.GOLD]: 1000,
+                  [ResourceType.WOOD]: 500,
+                  [ResourceType.STONE]: 300,
+                  [ResourceType.STEEL]: 200,
+                  [ResourceType.FOOD]: 400,
+                  [ResourceType.MANA_CRYSTALS]: 100,
+                  [ResourceType.HORSES]: 50
+                }}
+                onPromote={(unitId, advancedArchetype, resourcesUsed) => {
+                  console.log(`Unit ${unitId} promoted to ${advancedArchetype}`, resourcesUsed)
+                  handleEquipmentChange() // Force re-render
+                }}
               />
             </div>
           )}

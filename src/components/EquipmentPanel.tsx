@@ -3,7 +3,8 @@ import { Unit } from '../core/units'
 import { EquipmentSlot, EquipmentRarity, WeaponProperties, ArmorProperties, AccessoryProperties } from '../core/equipment'
 import { getWeapon, getStarterWeapons } from '../core/equipment/WeaponData'
 import { getArmor, getAccessory, getStarterEquipment } from '../core/equipment/ArmorData'
-import { Sword, Shield, Crown, Shirt, Hand, Footprints, Gem, Package, Plus, X } from 'lucide-react'
+import { EmberPanel } from './EmberPanel'
+import { Sword, Shield, Crown, Shirt, Hand, Footprints, Gem, Package, Plus, X, Flame } from 'lucide-react'
 import clsx from 'clsx'
 
 interface EquipmentPanelProps {
@@ -187,6 +188,42 @@ export function EquipmentPanel({ unit, onEquipmentChange }: EquipmentPanelProps)
           })}
         </div>
       </div>
+      
+      {/* Ember Management */}
+      {(unit.hasWeaponEquipped() || unit.getEquippedItem(EquipmentSlot.OFF_HAND)) && (
+        <div className="bg-slate-700 rounded-lg p-4">
+          <h4 className="text-sm font-medium text-slate-300 mb-4 flex items-center">
+            <Flame className="h-4 w-4 mr-2" />
+            Ember Management
+          </h4>
+          
+          <div className="space-y-4">
+            {/* Main Weapon Embers */}
+            {unit.hasWeaponEquipped() && (
+              <div>
+                <h5 className="text-xs font-medium text-slate-400 mb-2">Main Weapon</h5>
+                <EmberPanel 
+                  unit={unit} 
+                  weaponSlot={EquipmentSlot.WEAPON}
+                  onEmberChange={onEquipmentChange}
+                />
+              </div>
+            )}
+            
+            {/* Off-Hand Weapon Embers */}
+            {unit.getEquippedItem(EquipmentSlot.OFF_HAND) && 'emberSlots' in (unit.getEquippedItem(EquipmentSlot.OFF_HAND) as any) && (
+              <div>
+                <h5 className="text-xs font-medium text-slate-400 mb-2">Off-Hand Weapon</h5>
+                <EmberPanel 
+                  unit={unit} 
+                  weaponSlot={EquipmentSlot.OFF_HAND}
+                  onEmberChange={onEquipmentChange}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       
       {/* Item Browser Modal */}
       {showItemBrowser && selectedSlot && (

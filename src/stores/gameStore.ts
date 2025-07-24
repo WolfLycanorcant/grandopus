@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { Unit, UnitFactory } from '../core/units'
 import { Squad, SquadFactory, SQUAD_PRESETS } from '../core/squads'
 import { BattleEngine, BattleResult, BattleLogEntry } from '../core/battle'
+import { OverworldManager, HexCoordinate, BuildingType, Faction, ResourceType } from '../core/overworld'
 
 interface GameState {
   // Units
@@ -16,6 +17,11 @@ interface GameState {
   currentBattle: BattleEngine | null
   battleResult: BattleResult | null
   battleLog: BattleLogEntry[]
+
+  // Overworld
+  overworldManager: OverworldManager | null
+  playerResources: Record<ResourceType, number>
+  currentTurn: number
 
   // UI State
   isLoading: boolean
@@ -42,6 +48,18 @@ interface GameActions {
   executeBattle: () => void
   clearBattle: () => void
 
+  // Overworld actions
+  initializeOverworld: () => void
+  deploySquad: (squadId: string, coordinate: HexCoordinate) => void
+  recallSquad: (coordinate: HexCoordinate) => void
+  buildStructure: (coordinate: HexCoordinate, buildingType: BuildingType) => void
+  upgradeBuilding: (coordinate: HexCoordinate) => void
+  endTurn: () => void
+  moveArmy: (from: HexCoordinate, to: HexCoordinate) => void
+
+  // Promotion actions
+  promoteUnit: (unitId: string, advancedArchetype: string, resourcesUsed: Record<ResourceType, number>) => void
+
   // Utility actions
   setError: (error: string | null) => void
   setLoading: (loading: boolean) => void
@@ -59,6 +77,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   currentBattle: null,
   battleResult: null,
   battleLog: [],
+  overworldManager: null,
+  playerResources: {
+    [ResourceType.GOLD]: 500,
+    [ResourceType.WOOD]: 100,
+    [ResourceType.STONE]: 50,
+    [ResourceType.STEEL]: 25,
+    [ResourceType.FOOD]: 200,
+    [ResourceType.MANA_CRYSTALS]: 10,
+    [ResourceType.HORSES]: 5
+  },
+  currentTurn: 1,
   isLoading: false,
   error: null,
 
@@ -220,6 +249,270 @@ export const useGameStore = create<GameStore>((set, get) => ({
       battleResult: null,
       battleLog: []
     })
+  },
+
+  // Overworld actions
+  initializeOverworld: () => {
+    try {
+      const overworldManager = new OverworldManager(20, 15)
+      const partialResources = overworldManager.getPlayerResources(Faction.PLAYER)
+
+      // Ensure all resource types have values
+      const playerResources: Record<ResourceType, number> = {
+        [ResourceType.GOLD]: partialResources[ResourceType.GOLD] || 0,
+        [ResourceType.WOOD]: partialResources[ResourceType.WOOD] || 0,
+        [ResourceType.STONE]: partialResources[ResourceType.STONE] || 0,
+        [ResourceType.STEEL]: partialResources[ResourceType.STEEL] || 0,
+        [ResourceType.FOOD]: partialResources[ResourceType.FOOD] || 0,
+        [ResourceType.MANA_CRYSTALS]: partialResources[ResourceType.MANA_CRYSTALS] || 0,
+        [ResourceType.HORSES]: partialResources[ResourceType.HORSES] || 0
+      }
+
+      set({
+        overworldManager,
+        playerResources,
+        currentTurn: overworldManager.getCurrentTurn(),
+        error: null
+      })
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Failed to initialize overworld' })
+    }
+  },
+
+  deploySquad: (squadId, coordinate) => {
+    try {
+      const state = get()
+      const { overworldManager, squads } = state
+
+      if (!overworldManager) {
+        throw new Error('Overworld not initialized')
+      }
+
+      const squad = squads.find(s => s.id === squadId)
+      if (!squad) {
+        throw new Error('Squad not found')
+      }
+
+      const success = overworldManager.placeArmy(coordinate, [squad], Faction.PLAYER)
+      if (!success) {
+        throw new Error('Cannot deploy squad to this location')
+      }
+
+      set({
+        squads: squads.filter(s => s.id !== squadId), // Remove from available squads
+        error: null
+      })
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Failed to deploy squad' })
+    }
+  },
+
+  recallSquad: (coordinate) => {
+    try {
+      const state = get()
+      const { overworldManager, squads } = state
+
+      if (!overworldManager) {
+        throw new Error('Overworld not initialized')
+      }
+
+      const tile = overworldManager.getTile(coordinate)
+      if (!tile?.army || tile.army.faction !== Faction.PLAYER) {
+        throw new Error('No player army at this location')
+      }
+
+      const recalledSquads = tile.army.squads
+      overworldManager.removeArmy(coordinate)
+
+      set({
+        squads: [...squads, ...recalledSquads], // Add back to available squads
+        error: null
+      })
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Failed to recall squad' })
+    }
+  },
+
+  buildStructure: (coordinate, buildingType) => {
+    try {
+      const state = get()
+      const { overworldManager } = state
+
+      if (!overworldManager) {
+        throw new Error('Overworld not initialized')
+      }
+
+      const success = overworldManager.buildStructure(coordinate, buildingType, Faction.PLAYER)
+      if (!success) {
+        throw new Error('Cannot build structure at this location')
+      }
+
+      const partialResources = overworldManager.getPlayerResources(Faction.PLAYER)
+
+      // Ensure all resource types have values
+      const updatedResources: Record<ResourceType, number> = {
+        [ResourceType.GOLD]: partialResources[ResourceType.GOLD] || 0,
+        [ResourceType.WOOD]: partialResources[ResourceType.WOOD] || 0,
+        [ResourceType.STONE]: partialResources[ResourceType.STONE] || 0,
+        [ResourceType.STEEL]: partialResources[ResourceType.STEEL] || 0,
+        [ResourceType.FOOD]: partialResources[ResourceType.FOOD] || 0,
+        [ResourceType.MANA_CRYSTALS]: partialResources[ResourceType.MANA_CRYSTALS] || 0,
+        [ResourceType.HORSES]: partialResources[ResourceType.HORSES] || 0
+      }
+
+      set({
+        playerResources: updatedResources,
+        error: null
+      })
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Failed to build structure' })
+    }
+  },
+
+  upgradeBuilding: (coordinate) => {
+    try {
+      const state = get()
+      const { overworldManager } = state
+
+      if (!overworldManager) {
+        throw new Error('Overworld not initialized')
+      }
+
+      const success = overworldManager.upgradeBuilding(coordinate, Faction.PLAYER)
+      if (!success) {
+        throw new Error('Cannot upgrade building at this location')
+      }
+
+      const partialResources = overworldManager.getPlayerResources(Faction.PLAYER)
+
+      // Ensure all resource types have values
+      const updatedResources: Record<ResourceType, number> = {
+        [ResourceType.GOLD]: partialResources[ResourceType.GOLD] || 0,
+        [ResourceType.WOOD]: partialResources[ResourceType.WOOD] || 0,
+        [ResourceType.STONE]: partialResources[ResourceType.STONE] || 0,
+        [ResourceType.STEEL]: partialResources[ResourceType.STEEL] || 0,
+        [ResourceType.FOOD]: partialResources[ResourceType.FOOD] || 0,
+        [ResourceType.MANA_CRYSTALS]: partialResources[ResourceType.MANA_CRYSTALS] || 0,
+        [ResourceType.HORSES]: partialResources[ResourceType.HORSES] || 0
+      }
+
+      set({
+        playerResources: updatedResources,
+        error: null
+      })
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Failed to upgrade building' })
+    }
+  },
+
+  endTurn: () => {
+    try {
+      const state = get()
+      const { overworldManager } = state
+
+      if (!overworldManager) {
+        throw new Error('Overworld not initialized')
+      }
+
+      overworldManager.endTurn()
+      const partialResources = overworldManager.getPlayerResources(Faction.PLAYER)
+
+      // Ensure all resource types have values
+      const updatedResources: Record<ResourceType, number> = {
+        [ResourceType.GOLD]: partialResources[ResourceType.GOLD] || 0,
+        [ResourceType.WOOD]: partialResources[ResourceType.WOOD] || 0,
+        [ResourceType.STONE]: partialResources[ResourceType.STONE] || 0,
+        [ResourceType.STEEL]: partialResources[ResourceType.STEEL] || 0,
+        [ResourceType.FOOD]: partialResources[ResourceType.FOOD] || 0,
+        [ResourceType.MANA_CRYSTALS]: partialResources[ResourceType.MANA_CRYSTALS] || 0,
+        [ResourceType.HORSES]: partialResources[ResourceType.HORSES] || 0
+      }
+
+      set({
+        playerResources: updatedResources,
+        currentTurn: overworldManager.getCurrentTurn(),
+        error: null
+      })
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Failed to end turn' })
+    }
+  },
+
+  moveArmy: (from, to) => {
+    try {
+      const state = get()
+      const { overworldManager } = state
+
+      if (!overworldManager) {
+        throw new Error('Overworld not initialized')
+      }
+
+      const success = overworldManager.moveArmy(from, to, Faction.PLAYER)
+      if (!success) {
+        throw new Error('Cannot move army to this location')
+      }
+
+      set({ error: null })
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Failed to move army' })
+    }
+  },
+
+  // Promotion actions
+  promoteUnit: (unitId, advancedArchetype, resourcesUsed) => {
+    try {
+      const state = get()
+      const { units, squads, playerResources } = state
+
+      // Find the unit in units or squads
+      let targetUnit: Unit | null = null
+      targetUnit = units.find(u => u.id === unitId) || null
+
+      if (!targetUnit) {
+        // Check in squads
+        for (const squad of squads) {
+          const squadUnit = squad.getUnits().find(u => u.id === unitId)
+          if (squadUnit) {
+            targetUnit = squadUnit
+            break
+          }
+        }
+      }
+
+      if (!targetUnit) {
+        throw new Error('Unit not found')
+      }
+
+      // Deduct resources
+      const updatedResources = { ...playerResources }
+      Object.entries(resourcesUsed).forEach(([resource, amount]) => {
+        const resourceType = resource as ResourceType
+        if ((updatedResources[resourceType] || 0) < amount) {
+          throw new Error(`Insufficient ${resourceType}`)
+        }
+        updatedResources[resourceType] = (updatedResources[resourceType] || 0) - amount
+      })
+
+      // Update resources in overworld if available
+      if (state.overworldManager) {
+        Object.entries(resourcesUsed).forEach(([resource, amount]) => {
+          const resourceType = resource as ResourceType
+          const currentAmount = state.overworldManager!.getPlayerResources(Faction.PLAYER)[resourceType] || 0
+          // This would need a method to deduct resources from the overworld manager
+          // For now, we'll just update the local state
+        })
+      }
+
+      set({
+        playerResources: updatedResources,
+        error: null
+      })
+
+      console.log(`Unit ${targetUnit.name} promoted to ${advancedArchetype}!`)
+
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Failed to promote unit' })
+    }
   },
 
   // Utility actions

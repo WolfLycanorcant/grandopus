@@ -17,7 +17,7 @@ A **web-first squad-based tactical war game** with deep customization, strategic
 ---
 
 ## **2. Phases & Milestones**  
-### **Phase 1: Core Foundation (Months 1–3)**  
+### **Phase 1: Core Foundation (COMPLETED)**  
 **Objective:** Build the minimal viable product (MVP) for squad customization and basic combat.  
 
 #### **Key Features:**  
@@ -52,86 +52,181 @@ A **web-first squad-based tactical war game** with deep customization, strategic
    - Experience rewards, weapon proficiency gains, and detailed battle logging
    - `BattleEngine` with comprehensive combat mechanics and statistics
 
-5. **✅ UI/UX Prototype (COMPLETED)**  
+5. **✅ UI/UX Complete Implementation (COMPLETED)**  
    - Complete React + TypeScript frontend with modern styling
    - Home page with dashboard, quick actions, and game statistics
    - Units page with creation, management, filtering, and detailed unit views
    - Squad Editor with drag-and-drop formation management and visual positioning
    - Battle page with 3-phase combat: setup, execution, and comprehensive results
+   - **Overworld page with strategic map, building construction, and army deployment**
    - Zustand state management with full game integration
    - Responsive design with game-themed styling and animations
 
-#### **Tech Tasks:**  
-- ✅ **Exception system implementation (COMPLETED)**
-- ✅ **Core unit system with races, archetypes, and factory (COMPLETED)**
-- ✅ **Squad system with formation management and leadership (COMPLETED)**
-- ✅ **Battle system with Ogre Battle-style combat mechanics (COMPLETED)**
-- ✅ **Complete React + TypeScript frontend with all game features (COMPLETED)**
-- ✅ **Zustand state management with full game integration (COMPLETED)**
-- ✅ **Responsive UI with drag-and-drop formation editor (COMPLETED)**  
+#### **BONUS FEATURES ALREADY IMPLEMENTED:**
+6. **✅ Equipment System Foundation (COMPLETED)**  
+   - Complete weapon and armor type definitions
+   - Equipment slots (weapon, off-hand, head, body, hands, feet, accessories)
+   - Ember system with 0-3 slots per weapon
+   - Equipment rarity system (common to legendary)
+   - Stat bonuses and special effects
+   - Equipment sets with set bonuses
+   - Paper doll equipment UI components
+
+7. **✅ Skill System Foundation (COMPLETED)**  
+   - Complete skill tree architecture (General, Combat, Magic, Tactics, Survival, Weapon Mastery)
+   - Job Points (JP) system for skill unlocking
+   - Skill node types (stat boosts, passives, actives, weapon skills, formations)
+   - Skill activation triggers and effects
+   - Skill tree UI components
+
+8. **✅ Strategic Overworld System (COMPLETED)**  
+   - Hex-based strategic map with terrain types
+   - Building system (settlements, castles, farms, blacksmiths, etc.)
+   - Resource management (gold, steel, wood, stone, food, mana crystals, horses)
+   - Army deployment and movement
+   - Faction control and territory management
+   - Turn-based strategic gameplay
+   - Complete overworld UI with building construction
 
 #### **Dependencies:**  
 - None (isolated frontend prototype).  
 
 ---
 
-### **Phase 2: Core Systems Expansion (Months 4–6)**  
-**Objective:** Add weapons, skills, equipment, and strategic layer.  
+### **Phase 2: System Integration & Polish (COMPLETED)**  
+**Objective:** Connect existing systems and implement missing functionality.  
 
 #### **Key Features:**  
-1. **Weapon & Damage System**  
-   - Weapon types (sword, bow, staff), damage types (bludgeoning, magic).  
-   - Proficiency tracking (e.g., `sword: 50/100`).  
-   - Ember slot system (0–3 slots per weapon).  
+1. **✅ Equipment System Integration (COMPLETED)**  
+   - ✅ Connect equipment types to unit stats and combat
+   - ✅ Implement equipment manager for equipping/unequipping items
+   - ✅ Add weapon and armor data with actual items
+   - ✅ Integrate ember embedding system with 17 different embers
+   - ✅ Complete EmberManager with embedding, removal, and bonus calculations
+   - **Status:** Fully functional with UI integration
 
-2. **Skill Trees**  
-   - General, class-specific, and advanced themed trees.  
-   - Job Points (JP) system for unlocking nodes.  
+2. **✅ Unit Achievement System (COMPLETED)**  
+   - ✅ Persistent tracking of unit actions across all battles
+   - ✅ 20+ achievements across Combat, Support, Mastery, Legendary, and Specialized categories
+   - ✅ Permanent stat bonuses and special abilities as rewards
+   - ✅ Achievement progress UI with notifications and gallery
+   - ✅ Complete AchievementManager with progress tracking and reward application
+   - ✅ Integration with combat and progression systems
+   - **Status:** Fully implemented with comprehensive UI
 
-3. **Equipment & Paper Doll UI**  
-   - 8–10 equipment slots (weapon, armor, accessories).  
-   - React drag-and-drop interface with real-time stat updates.  
+3. **✅ Unit Relationships System (COMPLETED)**  
+   - ✅ Affinity system tracking interactions between units
+   - ✅ Personality traits affecting relationship development
+   - ✅ Relationship types from Neutral to Brothers-in-Arms, Rivals, Family, etc.
+   - ✅ Combat bonuses and stat effects from relationships
+   - ✅ Complete RelationshipManager with interaction recording
+   - ✅ Relationship UI with filtering, creation, and progress tracking
+   - **Status:** Fully implemented with comprehensive relationship mechanics
 
-4. **Strategic Overworld**  
-   - Hex grid map with terrain types (forest, hill).  
-   - Basic building placement (Church, Farm).  
+4. **✅ Skill System Integration (COMPLETED)**  
+   - ✅ Connect skill trees to unit progression
+   - ✅ Implement JP earning and spending mechanics (automatic on level up + battle rewards)
+   - ✅ Add skill activation during combat (passive bonuses integrated into damage calculation)
+   - ✅ Create functional skill tree UI (SkillTreePanel in unit details)
+   - ✅ Skill stat bonuses integrated into getCurrentStats()
+   - ✅ Combat bonuses (damage, critical hit) integrated into battle system
+   - ✅ Complete SkillManager with learning, activation, and progression
+   - **Status:** Fully implemented and integrated
+
+5. **✅ Strategic Overworld Integration (COMPLETED)**  
+   - ✅ Connect overworld to squad deployment (deploy/recall squads from game store)
+   - ✅ Implement resource generation and consumption (buildings generate resources per turn)
+   - ✅ Add building effects and bonuses (healing, stat bonuses, special effects for nearby squads)
+   - ✅ Create army movement and pathfinding (hex-based movement with terrain costs)
+   - ✅ Complete game store integration with overworld state management
+   - ✅ Building effects system with 8 building types providing unique bonuses
+   - ✅ Turn-based resource generation, construction, and squad healing
+   - ✅ Strategic events and notifications system
+   - **Status:** Fully integrated with comprehensive building effects and squad bonuses
+
+6. **✅ PlayCanvas 3D Engine Integration (COMPLETED)**  
+   - ✅ 3D Battle Arena with real-time combat visualization
+   - ✅ 3D Strategic Overworld with hex-based terrain and buildings
+   - ✅ Unit models differentiated by archetype and faction
+   - ✅ Animated combat sequences with damage effects and health bars
+   - ✅ Building construction and resource generation animations
+   - ✅ Army movement and deployment visualizations
+   - ✅ Multiple camera angles and interactive controls
+   - ✅ React UI overlays with full feature parity to 2D versions
+   - ✅ Seamless integration with existing game systems
+   - **Status:** Fully implemented with immersive 3D gameplay
+
+7. **✅ Unit Promotion System (COMPLETED)**  
+   - ✅ 27 Advanced classes across all base archetypes
+   - ✅ Comprehensive promotion requirements (level, resources, achievements, skills)
+   - ✅ Stat bonuses and level cap increases for promoted units
+   - ✅ New abilities and special effects for advanced classes
+   - ✅ Resource-based promotion costs integrated with overworld economy
+   - ✅ Complete PromotionManager with validation and progression tracking
+   - ✅ Promotion UI panel with detailed requirements and previews
+   - ✅ Integration with existing achievement and skill systems
+   - **Status:** Fully implemented with comprehensive progression paths
+
+8. **📋 Remaining Advanced Features**  
+   - Equipment crafting and enhancement
+   - Siege equipment for Dwarven Engineers
+   - Dynamic events and random encounters
 
 #### **Tech Tasks:**  
-- Integrate Three.js for 3D unit models (optional) or PixiJS for 2D sprites.  
-- Build skill tree UI with collapsible branches.  
-- Implement resource tracking (steel, wood) and promotion logic.  
+- **Priority 1:** Connect equipment system to units and combat
+- **Priority 2:** Implement functional skill trees with JP mechanics  
+- **Priority 3:** Add resource management and building effects
+- **Priority 4:** Create unit promotion and crafting systems
 
 #### **Dependencies:**  
-- Phase 1 completion.  
+- Phase 1 completion (✅ DONE).  
 
 ---
 
-### **Phase 3: Advanced Features (Months 7–9)**  
-**Objective:** Add relationships, drilling, siege equipment, and polish.  
+### **Phase 3: Advanced Features & Polish (CURRENT PHASE)**  
+**Objective:** Complete remaining core systems and add advanced features.  
 
 #### **Key Features:**  
-1. **Unit Relationships & Affinity**  
-   - Track affinity points between units.  
-   - Unlock bonuses (e.g., *Brothers-in-Arms*).  
+1. **🔄 Strategic Overworld Integration (IN PROGRESS)**  
+   - Connect overworld buildings to actual resource generation
+   - Implement army movement and pathfinding on hex map
+   - Add building effects and territory bonuses
+   - Create dynamic events and random encounters
+   - **Status:** UI complete, needs deeper system integration
 
-2. **Squad Drilling**  
-   - Training system with perks (e.g., *Phalanx Formation*).  
+3. **📋 Unit Promotion System (PENDING)**  
+   - Level cap increases and class changes
+   - Resource requirements for promotions (steel, mana crystals, etc.)
+   - Advanced class unlocks (Knight → Paladin, Mage → Archmage)
+   - Equipment inheritance and storage system
 
-3. **Siege Equipment (Dwarven Engineers)**  
-   - Resource-based crafting system.  
-   - Pre-battle effects (e.g., -30% enemy defense).  
+4. **📋 Equipment Crafting & Enhancement (PENDING)**  
+   - Blacksmith building functionality
+   - Resource-based weapon and armor creation
+   - Equipment upgrade system (+1, +2, +3 enhancements)
+   - Rare material requirements for legendary items
 
-4. **NVIDIA GPU Integration**  
-   - WebGL optimizations (DLSS, texture compression).  
-   - CUDA-accelerated calculations (e.g., damage formulas).  
+5. **📋 Siege Equipment (Dwarven Engineers) (PENDING)**  
+   - Resource-based crafting system
+   - Pre-battle effects (e.g., -30% enemy defense)
+   - Siege workshop UI and management
+   - Battering rams, trebuchets, and siege towers
+
+6. **📋 NVIDIA GPU Integration (PENDING)**  
+   - WebGL optimizations (DLSS, texture compression)
+   - CUDA-accelerated calculations (e.g., damage formulas)
+   - Performance optimization for large battles
 
 #### **Tech Tasks:**  
-- Add Dwarven Engineer class and siege workshop UI.  
-- Implement relationship tracking in Redux.  
-- Optimize rendering with WebGL 2.0 and NVIDIA extensions.  
+- **Priority 1:** Complete skill system integration and UI
+- **Priority 2:** Finish overworld system integration
+- **Priority 3:** Implement unit promotion system
+- **Priority 4:** Add equipment crafting and enhancement
+- **Priority 5:** Create siege equipment system
+- **Priority 6:** Optimize rendering with WebGL 2.0 and NVIDIA extensions
 
 #### **Dependencies:**  
-- Phase 2 completion.  
+- Phase 2 completion (✅ DONE)  
 
 ---
 
@@ -198,6 +293,43 @@ interface Squad {
   formation: { [position: string]: string }; // e.g., "row-0-col-0": "unit-1"
   artifacts: Artifact[];
   drills: string[]; // e.g., ["phalanx", "arcane_resonance"]
+}
+```
+
+#### **Achievement System**
+```typescript
+interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  category: 'combat' | 'support' | 'mastery' | 'legendary';
+  requirement: {
+    type: 'damage_taken' | 'healing_done' | 'kills' | 'battles_won' | ...;
+    target: number;
+    condition?: string; // e.g., "below_25_percent_hp"
+  };
+  reward: {
+    statBonuses?: { [stat: string]: number };
+    specialAbility?: string;
+    title?: string;
+    description: string;
+  };
+  isUnlocked: boolean;
+  progress: number;
+}
+
+interface UnitAchievements {
+  unitId: string;
+  achievements: Map<string, Achievement>;
+  statistics: {
+    totalDamageTaken: number;
+    totalHealingDone: number;
+    totalKills: number;
+    battlesWon: number;
+    criticalHits: number;
+    unitsHealed: Set<string>;
+    // ... other tracked stats
+  };
 }
 ```  
 

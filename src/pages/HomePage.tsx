@@ -1,25 +1,31 @@
 import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useGameStore } from '../stores/gameStore'
-import { Sword, Users, Zap, Plus, Play } from 'lucide-react'
+import { EmberTestPanel } from '../components/EmberTestPanel'
+import { AchievementTestPanel } from '../components/AchievementTestPanel'
+import { RelationshipTestPanel } from '../components/RelationshipTestPanel'
+import { SkillTestPanel } from '../components/SkillTestPanel'
+import { PromotionTestPanel } from '../components/PromotionTestPanel'
+import { OverworldTestPanel } from '../components/OverworldTestPanel'
+import { Sword, Users, Zap, Plus, Play, Map } from 'lucide-react'
 
 export function HomePage() {
-  const { 
-    units, 
-    squads, 
-    initializeGame, 
-    isLoading, 
+  const {
+    units,
+    squads,
+    initializeGame,
+    isLoading,
     error,
     createRandomUnit,
     createSquadFromPreset
   } = useGameStore()
-  
+
   useEffect(() => {
     if (units.length === 0 && squads.length === 0) {
       initializeGame()
     }
   }, [units.length, squads.length, initializeGame])
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -30,14 +36,14 @@ export function HomePage() {
       </div>
     )
   }
-  
+
   if (error) {
     return (
       <div className="text-center py-12">
         <div className="bg-red-900/20 border border-red-500 rounded-lg p-6 max-w-md mx-auto">
           <h2 className="text-xl font-semibold text-red-400 mb-2">Error</h2>
           <p className="text-red-300">{error}</p>
-          <button 
+          <button
             onClick={initializeGame}
             className="btn-primary mt-4"
           >
@@ -47,7 +53,7 @@ export function HomePage() {
       </div>
     )
   }
-  
+
   return (
     <div className="space-y-8">
       {/* Hero Section */}
@@ -56,11 +62,11 @@ export function HomePage() {
           Welcome to Grand Opus
         </h1>
         <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-          A squad-based tactical war game featuring deep customization, 
+          A squad-based tactical war game featuring deep customization,
           formation-based combat, and strategic progression.
         </p>
       </div>
-      
+
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="card">
@@ -70,7 +76,7 @@ export function HomePage() {
             <p className="text-slate-400">Available Units</p>
           </div>
         </div>
-        
+
         <div className="card">
           <div className="card-body text-center">
             <Sword className="h-12 w-12 text-secondary-500 mx-auto mb-4" />
@@ -78,7 +84,7 @@ export function HomePage() {
             <p className="text-slate-400">Active Squads</p>
           </div>
         </div>
-        
+
         <div className="card">
           <div className="card-body text-center">
             <Zap className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
@@ -87,7 +93,7 @@ export function HomePage() {
           </div>
         </div>
       </div>
-      
+
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <button
@@ -100,7 +106,7 @@ export function HomePage() {
             <p className="text-sm text-slate-400">Generate random unit</p>
           </div>
         </button>
-        
+
         <button
           onClick={() => createSquadFromPreset('BALANCED_STARTER')}
           className="card hover:bg-slate-700 transition-colors cursor-pointer"
@@ -111,7 +117,7 @@ export function HomePage() {
             <p className="text-sm text-slate-400">From preset template</p>
           </div>
         </button>
-        
+
         <Link to="/squads" className="card hover:bg-slate-700 transition-colors">
           <div className="card-body text-center">
             <Users className="h-8 w-8 text-purple-500 mx-auto mb-2" />
@@ -119,7 +125,7 @@ export function HomePage() {
             <p className="text-sm text-slate-400">Manage formations</p>
           </div>
         </Link>
-        
+
         <Link to="/battle" className="card hover:bg-slate-700 transition-colors">
           <div className="card-body text-center">
             <Play className="h-8 w-8 text-red-500 mx-auto mb-2" />
@@ -128,7 +134,81 @@ export function HomePage() {
           </div>
         </Link>
       </div>
-      
+
+      {/* 3D Features */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Link to="/battle3d" className="card hover:bg-slate-700 transition-colors border-2 border-emerald-500/30">
+          <div className="card-body">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-emerald-500/20 rounded-lg">
+                <Play className="h-8 w-8 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white flex items-center">
+                  3D Battle Arena
+                  <span className="ml-2 px-2 py-1 bg-emerald-500 text-emerald-900 text-xs font-bold rounded">NEW</span>
+                </h3>
+                <p className="text-sm text-slate-400">
+                  Experience tactical combat in immersive 3D with PlayCanvas rendering
+                </p>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        <Link to="/overworld3d" className="card hover:bg-slate-700 transition-colors border-2 border-blue-500/30">
+          <div className="card-body">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-blue-500/20 rounded-lg">
+                <Map className="h-8 w-8 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white flex items-center">
+                  3D Strategic Map
+                  <span className="ml-2 px-2 py-1 bg-blue-500 text-blue-900 text-xs font-bold rounded">NEW</span>
+                </h3>
+                <p className="text-sm text-slate-400">
+                  Command your empire from a stunning 3D perspective with real-time effects
+                </p>
+              </div>
+            </div>
+          </div>
+        </Link>
+      </div>
+
+      {/* Strategic Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Link to="/overworld" className="card hover:bg-slate-700 transition-colors">
+          <div className="card-body">
+            <div className="flex items-center space-x-4">
+              <Map className="h-12 w-12 text-green-500" />
+              <div>
+                <h3 className="text-lg font-semibold text-white">Strategic Overworld</h3>
+                <p className="text-sm text-slate-400">
+                  Manage your empire, build settlements, control territory, and wage strategic campaigns
+                </p>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        <div className="card bg-slate-700/50">
+          <div className="card-body">
+            <div className="flex items-center space-x-4">
+              <div className="h-12 w-12 bg-slate-600 rounded-lg flex items-center justify-center">
+                <span className="text-slate-400 text-xs">Soon</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-300">Campaign Mode</h3>
+                <p className="text-sm text-slate-500">
+                  Story-driven campaigns with unique challenges and rewards (Coming Soon)
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Units */}
@@ -158,7 +238,7 @@ export function HomePage() {
             )}
           </div>
         </div>
-        
+
         {/* Recent Squads */}
         <div className="card">
           <div className="card-header">
@@ -191,7 +271,17 @@ export function HomePage() {
           </div>
         </div>
       </div>
-      
+
+      {/* System Tests (Temporary) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <OverworldTestPanel />
+        <EmberTestPanel />
+        <AchievementTestPanel />
+        <RelationshipTestPanel />
+        <SkillTestPanel />
+        <PromotionTestPanel />
+      </div>
+
       {/* Getting Started */}
       <div className="card">
         <div className="card-header">
@@ -208,7 +298,7 @@ export function HomePage() {
                 Build your army with diverse races and archetypes. Each unit has unique abilities and stat growth.
               </p>
             </div>
-            
+
             <div className="text-center">
               <div className="bg-secondary-500/20 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
                 <span className="text-secondary-400 font-bold">2</span>
@@ -218,7 +308,7 @@ export function HomePage() {
                 Organize units into squads with strategic formations. Front row tanks, back row support.
               </p>
             </div>
-            
+
             <div className="text-center">
               <div className="bg-yellow-500/20 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
                 <span className="text-yellow-400 font-bold">3</span>

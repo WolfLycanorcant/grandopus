@@ -199,6 +199,7 @@ export interface EquipmentLoadout {
   [EquipmentSlot.FEET]?: ArmorProperties
   [EquipmentSlot.ACCESSORY_1]?: AccessoryProperties
   [EquipmentSlot.ACCESSORY_2]?: AccessoryProperties
+  [key: string]: WeaponProperties | ArmorProperties | AccessoryProperties | undefined
 }
 
 // Equipment Stats Summary

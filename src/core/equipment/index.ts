@@ -2,6 +2,8 @@
 export * from './types'
 export * from './WeaponData'
 export * from './ArmorData'
+export * from './EmberData'
+export * from './EmberManager'
 export * from './ProficiencySystem'
 export * from './EquipmentManager'
 
@@ -15,7 +17,8 @@ export type {
   StatBonus,
   SpecialEffect,
   WeaponProficiency,
-  ProficiencyTier
+  ProficiencyTier,
+  Ember
 } from './types'
 
 export {

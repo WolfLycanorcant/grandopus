@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Sword, Users, Zap, Shield } from 'lucide-react'
+import { Sword, Users, Zap, Shield, Map } from 'lucide-react'
 import clsx from 'clsx'
 
 interface LayoutProps {
@@ -15,6 +15,7 @@ export function Layout({ children }: LayoutProps) {
     { name: 'Units', href: '/units', icon: Users },
     { name: 'Squads', href: '/squads', icon: Sword },
     { name: 'Battle', href: '/battle', icon: Zap },
+    { name: 'Overworld', href: '/overworld', icon: Map },
   ]
   
   return (

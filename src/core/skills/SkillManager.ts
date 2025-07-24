@@ -365,6 +365,47 @@ export class SkillManager {
   }
 
   /**
+   * Get combat bonuses from learned skills
+   */
+  public getCombatBonuses(): {
+    damageBonus: number
+    criticalBonus: number
+    accuracyBonus: number
+    evasionBonus: number
+  } {
+    let damageBonus = 0
+    let criticalBonus = 0
+    let accuracyBonus = 0
+    let evasionBonus = 0
+
+    for (const learned of this.progress.learnedSkills.values()) {
+      const skill = getSkill(learned.skillId)
+      if (!skill) continue
+
+      for (const effect of skill.effects) {
+        if (effect.type === 'damage_bonus' && effect.percentage) {
+          damageBonus += effect.percentage * learned.rank
+        }
+        if (effect.type === 'special') {
+          if (effect.condition === 'crit_chance' && effect.percentage) {
+            criticalBonus += effect.percentage * learned.rank
+          }
+          if (effect.condition === 'dodge_chance' && effect.percentage) {
+            evasionBonus += effect.percentage * learned.rank
+          }
+        }
+      }
+    }
+
+    return {
+      damageBonus,
+      criticalBonus,
+      accuracyBonus,
+      evasionBonus
+    }
+  }
+
+  /**
    * Serialize to JSON
    */
   public toJSON(): any {
