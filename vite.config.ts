@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -17,7 +20,13 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    open: true
+    host: '0.0.0.0', // This allows external connections
+    open: true,
+    allowedHosts: ['wolf.ngrok.dev'],   // ← NEW
+    cors: {
+      origin: ['https://wolf.ngrok.dev', 'http://localhost:3000'], // allow the ngrok domain
+      credentials: true
+    }
   },
   build: {
     outDir: 'dist',

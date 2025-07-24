@@ -34,10 +34,77 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
   const [selectedOpponent, setSelectedOpponent] = useState<TrainingOpponent | null>(null);
   const [activeTab, setActiveTab] = useState<'opponents' | 'active' | 'history' | 'facilities'>('opponents');
   const [showBattleGrid, setShowBattleGrid] = useState(false);
+  const [remainingTimes, setRemainingTimes] = useState<Record<string, number>>({});
 
+  // Format time in MM:SS format
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Update timers every second
   useEffect(() => {
     const unsubscribe = recruitmentManager.subscribe(setRecruitmentState);
-    return unsubscribe;
+    
+    const updateTimers = () => {
+      const activeSessions = recruitmentManager.getState().trainingGrounds.activeTraining;
+      const newRemainingTimes = { ...remainingTimes };
+      let hasChanges = false;
+      
+      activeSessions.forEach(session => {
+        if (session.timer !== undefined) {
+          const secondsLeft = Math.ceil(session.timer / 1000);
+          if (newRemainingTimes[session.id] !== secondsLeft) {
+            newRemainingTimes[session.id] = secondsLeft;
+            hasChanges = true;
+          }
+        }
+      });
+      
+      if (hasChanges) {
+        setRemainingTimes(newRemainingTimes);
+      }
+    };
+    
+    // Initial update
+    updateTimers();
+    
+    // Set up interval for updates
+    const intervalId = setInterval(updateTimers, 1000);
+    
+    // Clean up
+    return () => {
+      unsubscribe();
+      clearInterval(intervalId);
+    };
+    
+    setRemainingTimes(newRemainingTimes);
+
+    const timer = setInterval(() => {
+      const updatedTimes = { ...remainingTimes };
+      let anyUpdated = false;
+      const now = Date.now();
+
+      activeSessions.forEach(session => {
+        const endTime = new Date(session.startTime.getTime() + session.duration * 60000);
+        const timeLeft = Math.max(0, Math.ceil((endTime.getTime() - now) / 1000));
+        
+        if (updatedTimes[session.id] !== timeLeft) {
+          updatedTimes[session.id] = timeLeft;
+          anyUpdated = true;
+        }
+      });
+
+      if (anyUpdated) {
+        setRemainingTimes(updatedTimes);
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(timer);
+      unsubscribe();
+    };
   }, [recruitmentManager]);
 
   const getDifficultyColor = (difficulty: string) => {
@@ -70,9 +137,27 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
     }
   };
 
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getSessionStatus = (session: TrainingSession) => {
+    const remaining = remainingTimes[session.id];
+    if (remaining === undefined) return 'Starting...';
+    if (remaining <= 0) return 'Complete!';
+    return `In Progress (${formatTime(remaining)})`;
+  };
+
   const handleCompleteTraining = (sessionId: string, result: 'Victory' | 'Defeat' | 'Draw') => {
     const record = recruitmentManager.completeTrainingSession(sessionId, result);
     if (record) {
+      // Remove the session from remainingTimes
+      const newRemainingTimes = { ...remainingTimes };
+      delete newRemainingTimes[sessionId];
+      setRemainingTimes(newRemainingTimes);
+      
       onTrainingComplete?.(record.unitId, record);
     }
   };
@@ -469,20 +554,6 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
                           className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-sm"
                         >
                           Draw
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 text-sm text-slate-400">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>Duration: {session.duration} min</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Target className="h-3 w-3" />
-                        <span>Status: {session.status}</span>
-                      </div>
-                    </div>
                   </div>
                 );
               })}

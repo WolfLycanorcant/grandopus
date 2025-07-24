@@ -90,8 +90,9 @@ export interface TrainingSession {
   opponentId: string;
   startTime: Date;
   duration: number; // in minutes
-  status: 'Active' | 'Completed' | 'Failed';
+  status: 'Active' | 'Completed' | 'Failed' | 'Cancelled';
   battleGrid: TrainingBattleGrid;
+  timer?: number; // ms remaining
 }
 
 export interface TrainingBattleGrid {

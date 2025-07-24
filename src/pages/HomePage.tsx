@@ -5,41 +5,39 @@ import { BattleTestPanel } from '../components/BattleTestPanel'
 import { CampaignTestPanel } from '../components/CampaignTestPanel'
 import { SettingsPanel } from '../components/SettingsPanel'
 import { UnitCreationConfirmModal } from '../components/UnitCreationConfirmModal'
+import { SaveLoadMenu } from '../components/SaveLoadMenu'
+import { AutoSaveManager } from '../components/AutoSaveManager'
+import { KeyboardShortcutsHelp } from '../components/KeyboardShortcutsHelp'
 import { useSettings } from '../contexts/SettingsContext'
-import { 
-  Users, 
-  Sword, 
-  Map, 
-  Trophy, 
-  Settings, 
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
+import {
+  Users,
+  Sword,
+  Map,
+  Trophy,
+  Settings,
   Play,
   Plus,
   BarChart3,
   Target,
-  Zap,
   Shield,
-  Heart,
-  TrendingUp,
-  BookOpen
+  BookOpen,
+  ShoppingCart,
+  Save
 } from 'lucide-react'
 import {
   ResponsiveGrid,
-  ResponsiveCard,
   QuickInfo,
-  StatDisplay,
-  ProgressBar,
   ToastManager,
   TutorialSystem,
-  TUTORIAL_SEQUENCES,
-  Tooltip
+  TUTORIAL_SEQUENCES
 } from '../components/ui'
-import { PromotionTestPanel } from '../components/PromotionTestPanel'
 
 export function HomePage() {
-  const { 
-    units, 
-    squads, 
-    currentBattle, 
+  const {
+    units,
+    squads,
+    currentBattle,
     battleResult,
     playerResources,
     currentTurn,
@@ -57,6 +55,9 @@ export function HomePage() {
   const [showUnitCreationModal, setShowUnitCreationModal] = useState(false)
   const [pendingUnitConfig, setPendingUnitConfig] = useState<any>(null)
 
+  // Enable keyboard shortcuts
+  useKeyboardShortcuts()
+
   // Initialize game on first load
   useEffect(() => {
     if (units.length === 0 && squads.length === 0) {
@@ -65,22 +66,7 @@ export function HomePage() {
     }
   }, [units.length, squads.length, initializeGame])
 
-  // Auto-save periodically
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (units.length > 0 || squads.length > 0) {
-        autoSave()
-        addToast({
-          type: 'info',
-          title: 'Game Auto-Saved',
-          message: 'Your progress has been automatically saved',
-          duration: 2000
-        })
-      }
-    }, 60000) // Auto-save every minute
-
-    return () => clearInterval(interval)
-  }, [units.length, squads.length, autoSave])
+  // Auto-save is now handled by AutoSaveManager component
 
   const addToast = (toast: any) => {
     const newToast = {
@@ -100,7 +86,7 @@ export function HomePage() {
       createRandomUnit(Math.floor(Math.random() * 3) + 1)
     }
     createSquadFromPreset('BALANCED_STARTER', 'Quick Start Squad')
-    
+
     addToast({
       type: 'success',
       title: 'Quick Start Complete!',
@@ -113,24 +99,24 @@ export function HomePage() {
     // Generate random unit config for confirmation
     const races = ['Human', 'Elf', 'Dwarf', 'Orc', 'Goblin', 'Beast', 'Dragon', 'Griffon']
     const archetypes = ['Warrior', 'Archer', 'Mage', 'Cleric', 'Rogue']
-    
+
     const randomRace = races[Math.floor(Math.random() * races.length)]
-    
+
     // Handle creature races properly
     const isCreature = ['Beast', 'Dragon', 'Griffon'].includes(randomRace)
     const randomArchetype = isCreature ? 'Creature' : archetypes[Math.floor(Math.random() * archetypes.length)]
-    
+
     // Generate appropriate names
     const creatureNames = {
       'Beast': ['Fang', 'Claw', 'Storm', 'Shadow', 'Thunder', 'Blaze', 'Frost', 'Ember'],
       'Dragon': ['Pyraxis', 'Frostmaw', 'Stormwing', 'Shadowflame', 'Goldscale', 'Ironhide', 'Voidclaw', 'Sunfire'],
       'Griffon': ['Skytalon', 'Windcrest', 'Stormfeather', 'Goldbeak', 'Swiftclaw', 'Cloudwing', 'Starsoar', 'Thunderstrike']
     }
-    
-    const unitName = isCreature 
+
+    const unitName = isCreature
       ? creatureNames[randomRace as keyof typeof creatureNames][Math.floor(Math.random() * creatureNames[randomRace as keyof typeof creatureNames].length)]
       : `${randomRace} ${randomArchetype}`
-    
+
     setPendingUnitConfig({
       name: unitName,
       race: randomRace,
@@ -142,9 +128,9 @@ export function HomePage() {
 
   const handleConfirmUnitCreation = async () => {
     if (!pendingUnitConfig) return
-    
+
     const result = await createRandomUnit(pendingUnitConfig.level)
-    
+
     if (result.success) {
       addToast({
         type: 'success',
@@ -158,7 +144,7 @@ export function HomePage() {
         message: result.error || 'Failed to create unit'
       })
     }
-    
+
     setShowUnitCreationModal(false)
     setPendingUnitConfig(null)
   }
@@ -229,6 +215,9 @@ export function HomePage() {
       {/* Toast Manager */}
       <ToastManager toasts={toasts} onRemove={removeToast} />
 
+      {/* Auto-Save Manager */}
+      <AutoSaveManager enabled={true} intervalMinutes={5} />
+
       {/* Header */}
       <div className="relative">
         <div className="text-center">
@@ -236,20 +225,24 @@ export function HomePage() {
             Welcome to Grand Opus
           </h1>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
-            Command squads of diverse units in tactical battles. 
-            Build your army, master formations, and conquer the realm in this 
+            Command squads of diverse units in tactical battles.
+            Build your army, master formations, and conquer the realm in this
             deep strategic war game.
           </p>
         </div>
-        
-        {/* Settings Button */}
-        <button
-          onClick={() => settingsManager.openSettings()}
-          className="absolute top-0 right-0 p-3 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-          title="Settings"
-        >
-          <Settings className="h-6 w-6" />
-        </button>
+
+        {/* Top Right Controls */}
+        <div className="absolute top-0 right-0 flex gap-2">
+          <SaveLoadMenu />
+          <KeyboardShortcutsHelp />
+          <button
+            onClick={() => settingsManager.openSettings()}
+            className="p-3 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+            title="Settings"
+          >
+            <Settings className="h-6 w-6" />
+          </button>
+        </div>
       </div>
 
       {/* Quick Stats Dashboard */}
@@ -263,7 +256,7 @@ export function HomePage() {
           trend={units.length > 0 ? 'up' : 'neutral'}
           onClick={() => window.location.href = '/units'}
         />
-        
+
         <QuickInfo
           title="Squads"
           value={squads.length}
@@ -273,7 +266,7 @@ export function HomePage() {
           trend={squads.length > 0 ? 'up' : 'neutral'}
           onClick={() => window.location.href = '/squads'}
         />
-        
+
         <QuickInfo
           title="Turn"
           value={currentTurn}
@@ -282,7 +275,7 @@ export function HomePage() {
           color="yellow"
           trend="up"
         />
-        
+
         <QuickInfo
           title="Gold"
           value={playerResources.gold?.toLocaleString() || '0'}
@@ -508,7 +501,7 @@ export function HomePage() {
       <CampaignTestPanel />
 
       {/* Settings Panel */}
-      <SettingsPanel 
+      <SettingsPanel
         settingsManager={settingsManager}
         isOpen={settingsState.isSettingsOpen}
         onClose={() => settingsManager.closeSettings()}

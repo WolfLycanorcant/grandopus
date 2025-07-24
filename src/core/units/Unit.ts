@@ -17,10 +17,8 @@ import { AchievementManager } from '../achievements/AchievementManager';
 import { RelationshipManager } from '../relationships/RelationshipManager';
 import { PromotionManager } from './PromotionManager';
 import { 
-  InvalidUnitStatsException,
   InvalidRaceException,
   InvalidArchetypeException,
-  InvalidUnitNameException,
   ValidationUtils
 } from '../../exceptions';
 
@@ -35,7 +33,6 @@ export class Unit {
   
   // Core stats
   private _baseStats: UnitStats;
-  private _currentStats: UnitStats;
   private _maxStats: UnitStats;
   
   // Experience and leveling
@@ -74,7 +71,12 @@ export class Unit {
   
   // Battle system integration
   private temporaryModifiers: Map<string, any> = new Map();
-  private activeStatusEffects: StatusEffect[] = [];
+  private activeStatusEffects: Array<{
+    effect: StatusEffect;
+    duration: number;
+    type: 'buff' | 'debuff';
+    name: string;
+  }> = [];
 
   constructor(
     id: string,
@@ -102,7 +104,6 @@ export class Unit {
     // Calculate base stats
     this._baseStats = this.calculateBaseStats();
     this._maxStats = { ...this._baseStats };
-    this._currentStats = { ...this._baseStats };
     
     // Initialize combat state
     this.currentHp = this._maxStats.hp;
@@ -162,7 +163,6 @@ export class Unit {
    * Calculate base stats combining archetype and racial modifiers
    */
   private calculateBaseStats(): UnitStats {
-    const archetypeData = getArchetypeData(this.archetype);
     const racialTraits = getRacialTraits(this.race);
     
     // Start with archetype base stats at current level
@@ -233,7 +233,6 @@ export class Unit {
       return false;
     }
     
-    const oldLevel = this.experience.currentLevel;
     this.experience.currentLevel++;
     this.experience.currentExp -= this.experience.expToNextLevel;
     this.experience.expToNextLevel = this.calculateExpToNextLevel(this.experience.currentLevel);
@@ -246,7 +245,6 @@ export class Unit {
     // Recalculate stats
     this._baseStats = this.calculateBaseStats();
     this._maxStats = { ...this._baseStats };
-    this._currentStats = { ...this._baseStats };
     
     // Heal to full on level up
     this.currentHp = this._maxStats.hp;
@@ -555,22 +553,32 @@ export class Unit {
   /**
    * Get active status effects for battle system
    */
-  public getActiveStatusEffects(): StatusEffect[] {
-    return [...this.activeStatusEffects]
+  public getActiveStatusEffects(): Array<{
+    effect: StatusEffect;
+    duration: number;
+    type: 'buff' | 'debuff';
+    name: string;
+  }> {
+    return [...this.activeStatusEffects];
   }
 
   /**
    * Add status effect for battle system
    */
-  public addBattleStatusEffect(effect: StatusEffect): void {
-    this.activeStatusEffects.push(effect)
+  public addBattleStatusEffect(effect: StatusEffect, duration: number = 3, type: 'buff' | 'debuff' = 'debuff', name?: string): void {
+    this.activeStatusEffects.push({
+      effect,
+      duration,
+      type,
+      name: name || effect.toString()
+    });
   }
 
   /**
    * Remove expired status effects
    */
   public removeExpiredStatusEffects(): void {
-    this.activeStatusEffects = this.activeStatusEffects.filter(effect => effect.duration > 0)
+    this.activeStatusEffects = this.activeStatusEffects.filter(statusEffect => statusEffect.duration > 0);
   }
 
   /**
@@ -591,7 +599,7 @@ export class Unit {
   /**
    * Get weapon proficiency as percentage for battle calculations
    */
-  public getWeaponProficiency(weaponType: WeaponType): number {
+  public getWeaponProficiencyPercentage(weaponType: WeaponType): number {
     const proficiency = this.weaponProficiencies.get(weaponType)
     return proficiency ? proficiency.level : 0
   }
@@ -607,10 +615,10 @@ export class Unit {
    * Check if unit has disabling status effects
    */
   private hasDisablingStatusEffect(): boolean {
-    return this.activeStatusEffects.some(effect => 
-      effect.type === 'debuff' && 
-      (effect.name === 'stun' || effect.name === 'sleep' || effect.name === 'paralysis')
-    )
+    return this.activeStatusEffects.some(statusEffect => 
+      statusEffect.type === 'debuff' && 
+      (statusEffect.name === 'stun' || statusEffect.name === 'sleep' || statusEffect.name === 'paralysis')
+    );
   }
 
   /**
@@ -632,7 +640,7 @@ export class Unit {
       maxHp: this.getCurrentStats().hp,
       race: this.race,
       archetype: this.archetype,
-      statusEffects: this.activeStatusEffects.map(effect => effect.name)
+      statusEffects: this.activeStatusEffects.map(statusEffect => statusEffect.name)
     }
   }
 
@@ -679,7 +687,6 @@ export class Unit {
     // Recalculate stats
     unit._baseStats = unit.calculateBaseStats();
     unit._maxStats = { ...unit._baseStats };
-    unit._currentStats = { ...unit._baseStats };
     
     return unit;
   }
