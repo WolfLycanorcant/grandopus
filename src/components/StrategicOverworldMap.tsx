@@ -16,6 +16,7 @@ import {
   hexToKey 
 } from '../core/overworld/HexUtils'
 import { getTerrainColor } from '../core/overworld/TerrainData'
+import { MovementVisualization, useMovementState } from './MovementVisualization'
 import { 
   Home, 
   Castle, 
@@ -30,7 +31,8 @@ import {
   Swords,
   Users,
   Coins,
-  Info
+  Info,
+  Move
 } from 'lucide-react'
 
 interface StrategicOverworldMapProps {
@@ -54,8 +56,10 @@ export function StrategicOverworldMap({
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 })
+  const [showMovement, setShowMovement] = useState(false)
 
   const { overworldManager } = useGameStore()
+  const movementState = useMovementState()
 
   const hexSize = 30
   const canvasWidth = 1200
@@ -374,8 +378,11 @@ export function StrategicOverworldMap({
         
         if (tile) {
           setHoveredTile(hexCoord)
+          // Update movement hover state
+          movementState.hoverDestination(hexCoord)
         } else {
           setHoveredTile(null)
+          movementState.hoverDestination(null)
         }
       }
     }
@@ -396,6 +403,11 @@ export function StrategicOverworldMap({
       const hexCoord = pixelToHex({ x: mouseX / zoom, y: mouseY / zoom }, hexSize)
       const tile = overworldManager.getTile(hexCoord)
       
+      // Handle movement selection if in movement mode
+      if (showMovement && tile) {
+        movementState.selectArmy(hexCoord, tile)
+      }
+      
       if (onTileSelect) {
         onTileSelect(hexCoord, tile)
       }
@@ -403,7 +415,6 @@ export function StrategicOverworldMap({
   }
 
   const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault()
     const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1
     setZoom(prev => Math.max(0.3, Math.min(3, prev * zoomFactor)))
   }
@@ -423,26 +434,58 @@ export function StrategicOverworldMap({
         onWheel={handleWheel}
       />
       
+      {/* Movement Visualization Overlay */}
+      {showMovement && overworldManager && (
+        <MovementVisualization
+          tiles={overworldManager.getState().tiles}
+          selectedArmy={movementState.selectedArmy}
+          hoveredDestination={movementState.hoveredDestination}
+          hexSize={hexSize}
+          zoom={zoom}
+          pan={pan}
+          canvasWidth={canvasWidth}
+          canvasHeight={canvasHeight}
+        />
+      )}
+
       {/* Map Controls */}
       <div className="absolute top-4 right-4 bg-slate-800/90 rounded-lg p-3 space-y-2">
         <button
-          onClick={() => setZoom(prev => Math.min(3, prev * 1.2))}
-          className="block w-full bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-sm"
+          onClick={() => {
+            setShowMovement(!showMovement)
+            if (!showMovement) {
+              movementState.clearSelection()
+            }
+          }}
+          className={`block w-full px-3 py-1 rounded text-sm transition-colors flex items-center justify-center gap-2 ${
+            showMovement 
+              ? 'bg-blue-600 hover:bg-blue-500 text-white' 
+              : 'bg-slate-700 hover:bg-slate-600 text-white'
+          }`}
         >
-          Zoom In
+          <Move className="w-4 h-4" />
+          {showMovement ? 'Exit Movement' : 'Movement Mode'}
         </button>
-        <button
-          onClick={() => setZoom(prev => Math.max(0.3, prev * 0.8))}
-          className="block w-full bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-sm"
-        >
-          Zoom Out
-        </button>
-        <button
-          onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }) }}
-          className="block w-full bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-sm"
-        >
-          Reset View
-        </button>
+        <div className="border-t border-slate-600 pt-2">
+          <button
+            onClick={() => setZoom(prev => Math.min(3, prev * 1.2))}
+            className="block w-full bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-sm"
+          >
+            Zoom In
+          </button>
+          <button
+            onClick={() => setZoom(prev => Math.max(0.3, prev * 0.8))}
+            className="block w-full bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-sm mt-1"
+          >
+            Zoom Out
+          </button>
+          <button
+            onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }) }}
+            className="block w-full bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-sm mt-1"
+          >
+            Reset View
+          </button>
+        </div>
       </div>
 
       {/* Tile Info Panel */}

@@ -16,6 +16,7 @@ import { hexToKey, keyToHex, hexDistance, getHexNeighbors, getHexesInRange } fro
 import { getTerrainProperties, calculateMovementCost, isTerrainPassable } from './TerrainData'
 import { getBuildingProperties, calculateBuildingResourceGeneration } from './BuildingData'
 import { calculateSquadBuildingBonuses, applyBuildingBonusesToSquad, SquadBuildingBonuses } from './BuildingEffects'
+import { AIIntegration } from '../ai/AIIntegration'
 
 /**
  * Core overworld manager handling strategic gameplay
@@ -23,6 +24,7 @@ import { calculateSquadBuildingBonuses, applyBuildingBonusesToSquad, SquadBuildi
 export class OverworldManager {
   private state: OverworldState
   private eventQueue: StrategicEvent[]
+  public aiIntegration: AIIntegration
 
   constructor(mapWidth: number = 20, mapHeight: number = 15) {
     this.eventQueue = []
@@ -60,6 +62,10 @@ export class OverworldManager {
     }
     
     this.generateBasicMap()
+    
+    // Initialize AI integration
+    this.aiIntegration = new AIIntegration(this)
+    this.aiIntegration.initializeAIFactions()
   }
 
   /**

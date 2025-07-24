@@ -1,11 +1,12 @@
-import { 
-  HexCoordinate, 
-  MapTile, 
-  MovementPath, 
+import {
+  HexCoordinate,
+  MapTile,
+  MovementPath,
   Faction,
   OverworldBattle
 } from './types'
 import { Squad } from '../squads'
+import { Archetype, Race } from '../units/types'
 import { PathfindingSystem } from './PathfindingSystem'
 import { hexToKey, hexDistance } from './HexUtils'
 import { calculateMovementCost } from './TerrainData'
@@ -141,11 +142,11 @@ export class ArmyMovementSystem {
     while (pathIndex < fullPath.tiles.length && remainingMovement > 0) {
       const nextPos = fullPath.tiles[pathIndex]
       const nextTile = tiles.get(hexToKey(nextPos))
-      
+
       if (!nextTile) break
 
       const moveCost = calculateMovementCost(nextTile.terrain)
-      
+
       if (moveCost > remainingMovement) {
         break // Can't afford this move
       }
@@ -172,7 +173,7 @@ export class ArmyMovementSystem {
     // Move army to furthest reachable position
     const fromTile = tiles.get(hexToKey(order.from))!
     const toTile = tiles.get(hexToKey(currentPos))!
-    
+
     this.moveArmyToTile(fromTile, toTile, order.squads, order.faction)
 
     return {
@@ -218,49 +219,68 @@ export class ArmyMovementSystem {
     canEngage: boolean
     tacticalValue: number
   }> {
-    const reachableTiles = PathfindingSystem.findReachableTiles(
-      armyPosition,
-      movementPoints,
-      tiles,
-      { faction, avoidEnemies: false }
-    )
+    try {
+      const reachableTiles = PathfindingSystem.findReachableTiles(
+        armyPosition,
+        movementPoints,
+        tiles,
+        { faction, avoidEnemies: false }
+      )
 
-    return reachableTiles.map(reachable => {
-      const tile = tiles.get(hexToKey(reachable.coordinate))!
-      const canEngage = !!(tile.army && tile.army.faction !== faction)
-      
-      // Calculate tactical value
-      let tacticalValue = 0
-      
-      // Strategic buildings are valuable
-      if (tile.building) {
-        tacticalValue += 30
-      }
-      
-      // Controlling territory is valuable
-      if (tile.controlledBy === Faction.NEUTRAL) {
-        tacticalValue += 10
-      } else if (tile.controlledBy !== faction) {
-        tacticalValue += 20 // Taking enemy territory
-      }
-      
-      // Terrain advantages
-      if (tile.terrain === 'hills' || tile.terrain === 'mountains') {
-        tacticalValue += 15
-      }
-      
-      // Enemy armies are high priority targets
-      if (canEngage) {
-        tacticalValue += 50
-      }
+      return reachableTiles
+        .filter(reachable => {
+          return reachable && 
+                 reachable.coordinate && 
+                 typeof reachable.coordinate.q === 'number' && 
+                 typeof reachable.coordinate.r === 'number'
+        })
+        .map(reachable => {
+          const tile = tiles.get(hexToKey(reachable.coordinate))
+          if (!tile) {
+            console.warn(`Tile not found for coordinate: ${hexToKey(reachable.coordinate)}`)
+            return null
+          }
+          
+          const canEngage = !!(tile.army && tile.army.faction !== faction)
 
-      return {
-        coordinate: reachable.coordinate,
-        movementCost: reachable.cost,
-        canEngage,
-        tacticalValue
-      }
-    }).sort((a, b) => b.tacticalValue - a.tacticalValue)
+          // Calculate tactical value
+          let tacticalValue = 0
+
+          // Strategic buildings are valuable
+          if (tile.building) {
+            tacticalValue += 30
+          }
+
+          // Controlling territory is valuable
+          if (tile.controlledBy === Faction.NEUTRAL) {
+            tacticalValue += 10
+          } else if (tile.controlledBy !== faction) {
+            tacticalValue += 20 // Taking enemy territory
+          }
+
+          // Terrain advantages
+          if (tile.terrain === 'hills' || tile.terrain === 'mountains') {
+            tacticalValue += 15
+          }
+
+          // Enemy armies are high priority targets
+          if (canEngage) {
+            tacticalValue += 50
+          }
+
+          return {
+            coordinate: reachable.coordinate,
+            movementCost: reachable.cost,
+            canEngage,
+            tacticalValue
+          }
+        })
+        .filter(result => result !== null) // Remove null results
+        .sort((a, b) => b.tacticalValue - a.tacticalValue)
+    } catch (error) {
+      console.error('Error in getValidMovementDestinations:', error)
+      return []
+    }
   }
 
   /**
@@ -280,13 +300,14 @@ export class ArmyMovementSystem {
       totalUnits += units.length
 
       for (const unit of units) {
-        // Count cavalry for movement bonus
-        if (unit.archetype === 'cavalry' || unit.equipment?.mount) {
+        // Count cavalry for movement bonus (Knights and flying races)
+        if (unit.archetype === Archetype.KNIGHT || unit.race === Race.GRIFFON) {
           cavalryUnits++
         }
-        
+
         // Count heavy units for movement penalty
-        if (unit.archetype === 'knight' || unit.equipment?.armor?.weight === 'heavy') {
+        if (unit.archetype === Archetype.KNIGHT ||
+          unit.archetype === Archetype.HEAVY_INFANTRY) {
           heavyUnits++
         }
       }
@@ -374,16 +395,16 @@ export class ArmyMovementSystem {
 
       const actions: string[] = []
       const tile = tiles.get(hexToKey(bestMove.coordinate))
-      
+
       if (tile) {
         if (tile.controlledBy === Faction.NEUTRAL) {
           actions.push('Capture neutral territory')
         }
-        
+
         if (tile.building && tile.building.faction !== faction) {
           actions.push(`Capture ${tile.building.type}`)
         }
-        
+
         if (tile.army && tile.army.faction !== faction) {
           actions.push('Engage enemy army')
         }
@@ -429,7 +450,7 @@ export class ArmyMovementSystem {
 
     for (const dest of destinations) {
       const tile = tiles.get(hexToKey(dest.coordinate))!
-      
+
       // Offensive targets
       if (dest.canEngage) {
         offensiveTargets.push({
@@ -438,7 +459,7 @@ export class ArmyMovementSystem {
           reason: 'Enemy army present'
         })
       }
-      
+
       if (tile.building && tile.building.faction !== faction) {
         offensiveTargets.push({
           coordinate: dest.coordinate,
@@ -455,7 +476,7 @@ export class ArmyMovementSystem {
           reason: 'High ground advantage'
         })
       }
-      
+
       if (tile.building && tile.building.faction === faction) {
         defensivePositions.push({
           coordinate: dest.coordinate,
@@ -472,7 +493,7 @@ export class ArmyMovementSystem {
           reason: 'Unclaimed territory'
         })
       }
-      
+
       if (tile.building?.type === 'mine' || tile.building?.type === 'farm') {
         economicTargets.push({
           coordinate: dest.coordinate,

@@ -1,22 +1,26 @@
 import React, { useState, useEffect } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { StrategicOverworldMap } from '../components/StrategicOverworldMap'
-import { 
-  HexCoordinate, 
-  MapTile, 
-  BuildingType, 
-  ResourceType, 
-  Faction 
+import { SquadMovementPanel } from '../components/SquadMovementPanel'
+import { AIOverviewPanel } from '../components/AIStatusPanel'
+import { AITestPanel } from '../components/AITestPanel'
+import { AIActivityFeed, AIActivityIndicator } from '../components/AIActivityFeed'
+import {
+  HexCoordinate,
+  MapTile,
+  BuildingType,
+  ResourceType,
+  Faction
 } from '../core/overworld'
 import { OverworldIntegration } from '../core/overworld/OverworldIntegration'
-import { 
-  Home, 
-  Castle, 
-  Church, 
-  Wheat, 
-  Hammer, 
-  Shield, 
-  Eye, 
+import {
+  Home,
+  Castle,
+  Church,
+  Wheat,
+  Hammer,
+  Shield,
+  Eye,
   Mountain,
   Plus,
   ArrowUp,
@@ -68,7 +72,7 @@ export function OverworldPage() {
 
   const handleBuildStructure = (buildingType: BuildingType) => {
     if (!selectedTile) return
-    
+
     buildStructure(selectedTile, buildingType)
     setShowBuildMenu(false)
   }
@@ -121,17 +125,20 @@ export function OverworldPage() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
+      {/* AI Activity Indicator */}
+      <AIActivityIndicator />
+      
       {/* Header */}
       <div className="bg-slate-800 border-b border-slate-700 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="text-blue-400 hover:text-blue-300 transition-colors"
             >
               ← Back to Home
             </Link>
-            
+
             <div>
               <h1 className="text-2xl font-bold">Strategic Overworld</h1>
               <p className="text-slate-400">Turn {currentTurn} • Manage your empire</p>
@@ -180,11 +187,10 @@ export function OverworldPage() {
                 <button
                   key={mode}
                   onClick={() => setMapMode(mode)}
-                  className={`px-3 py-1 rounded text-sm transition-colors ${
-                    mapMode === mode
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  }`}
+                  className={`px-3 py-1 rounded text-sm transition-colors ${mapMode === mode
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
                 >
                   {mode.charAt(0).toUpperCase() + mode.slice(1)}
                 </button>
@@ -305,6 +311,22 @@ export function OverworldPage() {
             </div>
           )}
 
+          {/* Squad Movement Panel */}
+          <SquadMovementPanel
+            selectedTile={selectedTile}
+            onTileSelect={(coordinate) => {
+              const tile = overworldManager?.getTile(coordinate) || null
+              handleTileSelect(coordinate, tile)
+            }}
+            onMovementComplete={(from, to) => {
+              // Refresh tile data after movement
+              if (selectedTile) {
+                const updatedTile = overworldManager?.getTile(selectedTile)
+                setSelectedTileData(updatedTile || null)
+              }
+            }}
+          />
+
           {/* Squad Deployment */}
           <div className="bg-slate-700 rounded-lg p-4">
             <h3 className="font-medium mb-3">Available Squads</h3>
@@ -334,6 +356,15 @@ export function OverworldPage() {
               </div>
             )}
           </div>
+
+          {/* AI Overview Panel */}
+          <AIOverviewPanel />
+
+          {/* AI Activity Feed */}
+          <AIActivityFeed />
+
+          {/* AI Test Panel (Development) */}
+          <AITestPanel />
 
           {/* Quick Stats */}
           {strategicOverview && (

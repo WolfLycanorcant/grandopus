@@ -1,222 +1,169 @@
-/**
- * Battle system type definitions
- */
-
-import { Unit } from '../units';
-import { Squad } from '../squads';
-import { DamageType, WeaponType } from '../units/types';
+import { Unit } from '../units'
+import { Squad } from '../squads'
 
 /**
- * Battle phases in Ogre Battle style combat
+ * Battle system types and interfaces
  */
+
 export enum BattlePhase {
-  SETUP = 'setup',           // Pre-battle setup
-  INITIATIVE = 'initiative', // Calculate turn order
-  ATTACK = 'attack',         // Attacking squad's turn
-  COUNTER = 'counter',       // Defending squad's counter-attack
-  RESOLUTION = 'resolution', // Battle end and cleanup
-  COMPLETE = 'complete'      // Battle finished
+  INITIATIVE = 'initiative',
+  COMBAT = 'combat',
+  RESOLUTION = 'resolution'
 }
 
-/**
- * Battle state tracking
- */
 export interface BattleState {
-  id: string;
-  phase: BattlePhase;
-  currentRound: number;
-  maxRounds: number;
-  attackingSquad: Squad;
-  defendingSquad: Squad;
-  winner?: Squad;
-  battleLog: BattleLogEntry[];
-  isComplete: boolean;
+  id: string
+  attackingSquad: Squad
+  defendingSquad: Squad
+  currentPhase: BattlePhase
+  currentTurn: number
+  turnOrder: Unit[]
+  activeUnitIndex: number
+  isComplete: boolean
+  winner: Squad | null
+  battleLog: string[]
 }
 
-/**
- * Battle log entry for tracking what happened
- */
-export interface BattleLogEntry {
-  round: number;
-  phase: BattlePhase;
-  timestamp: Date;
-  type: 'attack' | 'damage' | 'heal' | 'status' | 'ability' | 'formation' | 'info';
-  attacker?: Unit;
-  target?: Unit;
-  damage?: number;
-  healing?: number;
-  message: string;
-  details?: Record<string, any>;
-}
-
-/**
- * Combat action that a unit can perform
- */
-export interface CombatAction {
-  id: string;
-  name: string;
-  type: 'attack' | 'ability' | 'item';
-  performer: Unit;
-  targets: Unit[];
-  damageType?: DamageType;
-  weaponType?: WeaponType;
-  baseDamage?: number;
-  accuracy?: number;
-  effects?: CombatEffect[];
-}
-
-/**
- * Effects that can be applied during combat
- */
-export interface CombatEffect {
-  type: 'damage' | 'heal' | 'status' | 'stat_modifier';
-  value: number;
-  duration?: number;
-  target: 'self' | 'target' | 'all_allies' | 'all_enemies';
-  description: string;
-}
-
-/**
- * Damage calculation result
- */
-export interface DamageResult {
-  baseDamage: number;
-  finalDamage: number;
-  damageType: DamageType;
-  isCritical: boolean;
-  isBlocked: boolean;
-  resistanceApplied: number;
-  modifiers: DamageModifier[];
-}
-
-/**
- * Damage calculation modifiers
- */
-export interface DamageModifier {
-  source: string;
-  type: 'weapon_proficiency' | 'weapon_bonus' | 'stat_bonus' | 'formation_bonus' | 'racial_trait' | 'artifact' | 'resistance' | 'critical_hit' | 'equipment_bonus';
-  value: number;
-  description: string;
-}
-
-/**
- * Initiative calculation for turn order
- */
-export interface InitiativeResult {
-  unit: Unit;
-  initiative: number;
-  modifiers: InitiativeModifier[];
-}
-
-/**
- * Initiative modifiers
- */
-export interface InitiativeModifier {
-  source: string;
-  value: number;
-  description: string;
-}
-
-/**
- * Formation bonuses applied during combat
- */
-export interface FormationCombatBonus {
-  unit: Unit;
-  position: 'front' | 'back';
-  bonuses: {
-    armorBonus?: number;
-    physicalDamageBonus?: number;
-    rangedDamageBonus?: number;
-    physicalDamageReduction?: number;
-  };
-}
-
-/**
- * Battle configuration options
- */
-export interface BattleConfig {
-  maxRounds: number;
-  allowRetreat: boolean;
-  terrainEffects?: TerrainEffect[];
-  weatherEffects?: WeatherEffect[];
-  ambushModifier?: number;
-}
-
-/**
- * Terrain effects on battle
- */
-export interface TerrainEffect {
-  type: string;
-  name: string;
-  effects: {
-    movementPenalty?: number;
-    damageBonusType?: DamageType;
-    damageBonus?: number;
-    evasionBonus?: number;
-    other?: string;
-  };
-}
-
-/**
- * Weather effects on battle
- */
-export interface WeatherEffect {
-  type: string;
-  name: string;
-  effects: {
-    accuracyModifier?: number;
-    damageTypeBonus?: Record<DamageType, number>;
-    visibilityReduction?: boolean;
-  };
-}
-
-/**
- * Battle victory conditions
- */
-export enum VictoryCondition {
-  ELIMINATION = 'elimination',     // All enemy units defeated
-  RETREAT = 'retreat',            // Enemy squad retreats
-  TIMEOUT = 'timeout',            // Battle time limit reached
-  OBJECTIVE = 'objective'         // Special objective completed
-}
-
-/**
- * Battle result summary
- */
 export interface BattleResult {
-  winner: Squad;
-  loser: Squad;
-  victoryCondition: VictoryCondition;
-  rounds: number;
+  winner: Squad
+  loser: Squad
+  turnsElapsed: number
+  battleLog: string[]
   casualties: {
-    winner: Unit[];
-    loser: Unit[];
-  };
-  experience: {
-    winner: number;
-    loser: number;
-  };
-  loot?: BattleLoot;
-  statistics: BattleStatistics;
+    attacking: Unit[]
+    defending: Unit[]
+  }
+  experienceGained: number
 }
 
-/**
- * Loot gained from battle
- */
-export interface BattleLoot {
-  resources: Record<string, number>;
-  equipment?: any[];
-  artifacts?: any[];
+export interface BattleTurn {
+  turnNumber: number
+  activeUnit: Unit
+  action: CombatAction
+  result: DamageResult | null
+  battleState: any // Snapshot of battle state
 }
 
-/**
- * Battle statistics for analysis
- */
-export interface BattleStatistics {
-  totalDamageDealt: Record<string, number>;  // unitId -> damage
-  totalDamageTaken: Record<string, number>;  // unitId -> damage
-  totalHealing: Record<string, number>;      // unitId -> healing
-  criticalHits: Record<string, number>;      // unitId -> crits
-  accuracyRate: Record<string, number>;      // unitId -> hit rate
-  abilitiesUsed: Record<string, string[]>;   // unitId -> abilities
+export interface CombatAction {
+  type: 'attack' | 'cast_spell' | 'use_item' | 'move' | 'wait'
+  actor: Unit
+  target?: Unit
+  weapon?: any
+  spell?: any
+  item?: any
+  position?: { x: number; y: number }
+}
+
+export interface DamageResult {
+  baseDamage: number
+  totalDamage: number
+  actualDamage: number
+  damageType: 'physical' | 'magical' | 'elemental'
+  isCritical: boolean
+  targetDefeated: boolean
+  statusEffects?: StatusEffect[]
+}
+
+export interface StatusEffect {
+  id: string
+  name: string
+  type: 'buff' | 'debuff' | 'dot' | 'hot'
+  duration: number
+  effect: {
+    stat?: string
+    modifier?: number
+    damagePerTurn?: number
+    healPerTurn?: number
+  }
+}
+
+export interface BattleConfiguration {
+  environment: 'plains' | 'forest' | 'desert' | 'snow' | 'volcanic'
+  weather: 'clear' | 'rain' | 'snow' | 'fog'
+  timeOfDay: 'dawn' | 'day' | 'dusk' | 'night'
+  terrainEffects: TerrainEffect[]
+}
+
+export interface TerrainEffect {
+  name: string
+  description: string
+  effects: {
+    movementCost?: number
+    damageModifier?: number
+    accuracyModifier?: number
+    coverBonus?: number
+  }
+}
+
+export interface CombatStats {
+  accuracy: number
+  evasion: number
+  criticalChance: number
+  criticalMultiplier: number
+  armor: number
+  magicResistance: number
+  statusResistance: number
+}
+
+export interface WeaponData {
+  id: string
+  name: string
+  type: 'sword' | 'axe' | 'bow' | 'staff' | 'dagger' | 'spear'
+  baseDamage: number
+  damageType: 'physical' | 'magical'
+  accuracy: number
+  criticalChance: number
+  range: number
+  specialEffects?: string[]
+}
+
+export interface SpellData {
+  id: string
+  name: string
+  school: 'fire' | 'ice' | 'lightning' | 'earth' | 'holy' | 'dark'
+  manaCost: number
+  baseDamage: number
+  range: number
+  areaOfEffect: number
+  castTime: number
+  cooldown: number
+  statusEffects?: StatusEffect[]
+}
+
+export interface BattleEvent {
+  type: 'unit_death' | 'critical_hit' | 'spell_cast' | 'status_applied' | 'battle_end'
+  timestamp: number
+  data: any
+}
+
+export interface FormationBonus {
+  name: string
+  description: string
+  conditions: string[]
+  effects: {
+    damageBonus?: number
+    defenseBonus?: number
+    accuracyBonus?: number
+    initiativeBonus?: number
+  }
+}
+
+export interface CombatModifier {
+  id: string
+  name: string
+  source: 'formation' | 'equipment' | 'spell' | 'terrain' | 'weather'
+  duration: number
+  effects: {
+    statModifiers?: Record<string, number>
+    damageModifiers?: Record<string, number>
+    specialEffects?: string[]
+  }
+}
+
+export interface BattleCallbacks {
+  onBattleStart?: (battle: BattleState) => void
+  onTurnExecuted?: (turn: BattleTurn) => void
+  onBattleEnd?: (result: BattleResult) => void
+  onUnitDefeated?: (unit: Unit) => void
+  onCriticalHit?: (attacker: Unit, target: Unit, damage: number) => void
 }

@@ -167,7 +167,10 @@ export class UnitFactory {
      * Generate unique unit ID
      */
     private static generateUnitId(): string {
-        return `unit_${this.unitIdCounter++}_${Date.now()}`;
+        // Use counter, timestamp, and random component for guaranteed uniqueness
+        const timestamp = Date.now();
+        const random = Math.floor(Math.random() * 10000);
+        return `unit_${this.unitIdCounter++}_${timestamp}_${random}`;
     }
 
     /**

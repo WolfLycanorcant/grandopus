@@ -1,14 +1,14 @@
-import { 
-  HexCoordinate, 
-  MovementPath, 
-  PathfindingOptions, 
-  MapTile, 
-  Faction 
+import {
+  HexCoordinate,
+  MovementPath,
+  PathfindingOptions,
+  MapTile,
+  Faction
 } from './types'
-import { 
-  hexDistance, 
-  getHexNeighbors, 
-  hexToKey 
+import {
+  hexDistance,
+  getHexNeighbors,
+  hexToKey
 } from './HexUtils'
 import { calculateMovementCost, isTerrainPassable } from './TerrainData'
 
@@ -42,7 +42,7 @@ export class PathfindingSystem {
       // Find node with lowest fScore
       let current = ''
       let lowestF = Infinity
-      
+
       for (const node of openSet) {
         const f = fScore.get(node) || Infinity
         if (f < lowestF) {
@@ -64,7 +64,7 @@ export class PathfindingSystem {
 
       for (const neighbor of neighbors) {
         const neighborKey = hexToKey(neighbor)
-        
+
         if (closedSet.has(neighborKey)) {
           continue
         }
@@ -133,9 +133,9 @@ export class PathfindingSystem {
       }
 
       visited.add(currentKey)
-      
+
       if (current.cost <= maxMovement) {
-        reachable.push(current)
+        reachable.push({ coordinate: current.coord, cost: current.cost })
       }
 
       if (current.cost >= maxMovement) {
@@ -143,10 +143,10 @@ export class PathfindingSystem {
       }
 
       const neighbors = getHexNeighbors(current.coord)
-      
+
       for (const neighbor of neighbors) {
         const neighborKey = hexToKey(neighbor)
-        
+
         if (visited.has(neighborKey)) {
           continue
         }
@@ -162,14 +162,14 @@ export class PathfindingSystem {
         }
 
         const newCost = current.cost + movementCheck.cost
-        
+
         if (newCost <= maxMovement) {
           queue.push({ coord: neighbor, cost: newCost })
         }
       }
     }
 
-    return reachable.filter(r => !(r.coord.q === start.q && r.coord.r === start.r))
+    return reachable.filter(r => !(r.coordinate.q === start.q && r.coordinate.r === start.r))
   }
 
   /**
@@ -181,19 +181,19 @@ export class PathfindingSystem {
   ): { valid: boolean; cost: number; reason?: string } {
     // Check terrain passability
     if (!isTerrainPassable(tile.terrain, options.requiresSpecialMovement || [])) {
-      return { 
-        valid: false, 
-        cost: 0, 
-        reason: `Terrain ${tile.terrain} is not passable` 
+      return {
+        valid: false,
+        cost: 0,
+        reason: `Terrain ${tile.terrain} is not passable`
       }
     }
 
     // Check for enemy armies
     if (options.avoidEnemies && tile.army && tile.army.faction !== options.faction) {
-      return { 
-        valid: false, 
-        cost: 0, 
-        reason: 'Enemy army blocks movement' 
+      return {
+        valid: false,
+        cost: 0,
+        reason: 'Enemy army blocks movement'
       }
     }
 
@@ -218,7 +218,7 @@ export class PathfindingSystem {
     while (currentKey) {
       const coord = this.keyToCoordinate(currentKey)
       path.unshift(coord)
-      
+
       const tile = tiles.get(currentKey)
       if (tile && path.length > 1) {
         totalCost += calculateMovementCost(tile.terrain)
@@ -284,7 +284,7 @@ export class PathfindingSystem {
 
     for (let i = 0; i < waypoints.length - 1; i++) {
       const segmentPath = this.findPath(waypoints[i], waypoints[i + 1], tiles, options)
-      
+
       if (!segmentPath.isValid) {
         return {
           tiles: [],
@@ -334,29 +334,29 @@ export class PathfindingSystem {
 
     // Get all neighbors within range
     const neighbors = getHexNeighbors(target)
-    
+
     for (const neighbor of neighbors) {
       const tile = tiles.get(hexToKey(neighbor))
       if (!tile) continue
 
       // Calculate tactical value based on terrain and position
       let tacticalValue = 0
-      
+
       // Higher ground gives advantage
       if (tile.terrain === 'hills' || tile.terrain === 'mountains') {
         tacticalValue += 20
       }
-      
+
       // Cover provides defensive bonus
       if (tile.terrain === 'forest') {
         tacticalValue += 15
       }
-      
+
       // Buildings provide strategic value
       if (tile.building) {
         tacticalValue += 25
       }
-      
+
       // Avoid enemy-controlled territory
       if (tile.controlledBy !== options.faction && tile.controlledBy !== Faction.NEUTRAL) {
         tacticalValue -= 30
@@ -364,7 +364,7 @@ export class PathfindingSystem {
 
       // Check if position is reachable
       const movementCheck = this.isMovementValid(tile, options)
-      
+
       positions.push({
         coordinate: neighbor,
         tacticalValue,
@@ -387,7 +387,7 @@ export class PathfindingSystem {
     faction: Faction
   ): Set<string> {
     const zoneOfControl = new Set<string>()
-    
+
     const reachableTiles = this.findReachableTiles(
       armyPosition,
       movementRange,
@@ -398,7 +398,7 @@ export class PathfindingSystem {
     for (const reachable of reachableTiles) {
       // Add the tile itself
       zoneOfControl.add(hexToKey(reachable.coordinate))
-      
+
       // Add adjacent tiles (threatened squares)
       const neighbors = getHexNeighbors(reachable.coordinate)
       for (const neighbor of neighbors) {

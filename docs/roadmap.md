@@ -1,8 +1,9 @@
 
 
 # **Squad-Based Tactical War Game: Technical Roadmap**  
-**Version 1.0**  
-**Date:** July 2025  
+**Version 2.0**  
+**Date:** January 2025  
+**Last Updated:** January 24, 2025  
 
 ---
 
@@ -16,7 +17,30 @@ A **web-first squad-based tactical war game** with deep customization, strategic
 
 ---
 
-## **2. Phases & Milestones**  
+## **2. Recent Achievements (January 2025)**
+### **🚀 Major Milestone: Advanced Squad Movement System**
+The project has reached a significant milestone with the completion of a comprehensive squad movement system that transforms the strategic overworld into a fully interactive tactical environment.
+
+#### **Key Accomplishments:**
+- **✅ Interactive Movement Planning**: Click-to-select armies with comprehensive movement analysis
+- **✅ Advanced Pathfinding**: A* algorithm implementation with terrain cost optimization
+- **✅ Visual Movement System**: Real-time overlays showing movement ranges, paths, and tactical opportunities
+- **✅ Tactical Analysis Engine**: Automatic identification of offensive, defensive, and economic targets
+- **✅ Army Composition Effects**: Movement speed calculations based on unit types (cavalry bonuses, heavy penalties)
+- **✅ Combat Integration**: Seamless battle initiation through movement encounters
+- **✅ Multi-turn Planning**: Strategic route optimization for long-distance objectives
+
+#### **Technical Excellence:**
+- **Type-Safe Implementation**: Full TypeScript integration with comprehensive error handling
+- **Performance Optimized**: Efficient pathfinding with graceful fallbacks for edge cases
+- **UI/UX Polish**: Intuitive movement interface with visual feedback and tactical insights
+- **System Integration**: Seamless connection with existing overworld, battle, and unit systems
+
+This achievement represents the completion of the core strategic gameplay loop, enabling players to deploy, move, and engage armies in a rich tactical environment.
+
+---
+
+## **3. Phases & Milestones**  
 ### **Phase 1: Core Foundation (COMPLETED)**  
 **Objective:** Build the minimal viable product (MVP) for squad customization and basic combat.  
 
@@ -144,6 +168,20 @@ A **web-first squad-based tactical war game** with deep customization, strategic
    - ✅ Strategic events and notifications system
    - **Status:** Fully integrated with comprehensive building effects and squad bonuses
 
+8. **✅ Advanced Squad Movement System (COMPLETED - January 2025)**  
+   - ✅ Interactive movement planning with tactical analysis
+   - ✅ A* pathfinding algorithm for optimal route calculation
+   - ✅ Visual movement range overlays with color-coded destinations
+   - ✅ Real-time path preview on tile hover
+   - ✅ Movement cost calculation based on terrain and army composition
+   - ✅ Tactical positioning analysis (offensive, defensive, economic targets)
+   - ✅ Army composition effects on movement speed (cavalry bonuses, heavy unit penalties)
+   - ✅ Combat detection and battle initiation through movement
+   - ✅ Partial movement support for long-distance travel
+   - ✅ Multi-turn movement planning and strategic route optimization
+   - ✅ Complete UI integration with movement panel and visualization overlays
+   - **Status:** Fully implemented with comprehensive tactical movement mechanics
+
 6. **✅ PlayCanvas 3D Engine Integration (COMPLETED)**  
    - ✅ 3D Battle Arena with real-time combat visualization
    - ✅ 3D Strategic Overworld with hex-based terrain and buildings
@@ -183,50 +221,73 @@ A **web-first squad-based tactical war game** with deep customization, strategic
 
 ---
 
-### **Phase 3: Advanced Features & Polish (CURRENT PHASE)**  
-**Objective:** Complete remaining core systems and add advanced features.  
+### **Phase 3: Advanced Features & Content Expansion (CURRENT PHASE)**  
+**Objective:** Add advanced gameplay mechanics and content depth.  
 
 #### **Key Features:**  
-1. **🔄 Strategic Overworld Integration (IN PROGRESS)**  
-   - Connect overworld buildings to actual resource generation
-   - Implement army movement and pathfinding on hex map
-   - Add building effects and territory bonuses
-   - Create dynamic events and random encounters
-   - **Status:** UI complete, needs deeper system integration
-
-3. **📋 Unit Promotion System (PENDING)**  
-   - Level cap increases and class changes
-   - Resource requirements for promotions (steel, mana crystals, etc.)
-   - Advanced class unlocks (Knight → Paladin, Mage → Archmage)
-   - Equipment inheritance and storage system
-
-4. **📋 Equipment Crafting & Enhancement (PENDING)**  
-   - Blacksmith building functionality
-   - Resource-based weapon and armor creation
+1. **📋 Equipment Crafting & Enhancement System (HIGH PRIORITY)**  
+   - Blacksmith building functionality for weapon/armor creation
+   - Resource-based crafting recipes (steel + wood = sword)
    - Equipment upgrade system (+1, +2, +3 enhancements)
    - Rare material requirements for legendary items
+   - Equipment breakdown and material recovery
+   - Crafting UI with recipe discovery and material management
+   - **Status:** Foundation exists, needs implementation
 
-5. **📋 Siege Equipment (Dwarven Engineers) (PENDING)**  
-   - Resource-based crafting system
-   - Pre-battle effects (e.g., -30% enemy defense)
-   - Siege workshop UI and management
-   - Battering rams, trebuchets, and siege towers
+2. **📋 Advanced AI & Enemy Factions (HIGH PRIORITY)**  
+   - Computer-controlled enemy factions with unique strategies
+   - AI army movement and tactical decision making
+   - Dynamic faction relationships and diplomacy
+   - Enemy base building and resource management
+   - Faction-specific units and equipment
+   - Random encounters and patrol systems
+   - **Status:** Basic AI exists, needs expansion
 
-6. **📋 NVIDIA GPU Integration (PENDING)**  
-   - WebGL optimizations (DLSS, texture compression)
-   - CUDA-accelerated calculations (e.g., damage formulas)
-   - Performance optimization for large battles
+3. **📋 Siege Equipment & Engineering (MEDIUM PRIORITY)**  
+   - Dwarven Engineer siege workshop functionality
+   - Resource-based crafting system for siege equipment
+   - Pre-battle siege effects (wall destruction, morale damage)
+   - Siege equipment types: battering rams, trebuchets, siege towers
+   - Siege workshop UI and equipment management
+   - Integration with overworld building system
+   - **Status:** Design complete, needs implementation
+
+4. **📋 Dynamic Events & Quest System (MEDIUM PRIORITY)**  
+   - Random world events (natural disasters, merchant caravans, bandit raids)
+   - Quest generation system with procedural objectives
+   - Event chains with meaningful player choices
+   - Seasonal events and time-based mechanics
+   - Reward systems tied to overworld progression
+   - Event notification and management UI
+   - **Status:** Framework exists, needs content
+
+5. **📋 Advanced Battle Mechanics (LOW PRIORITY)**  
+   - Weather effects on combat (rain reduces fire damage, snow slows movement)
+   - Terrain-based battle maps matching overworld tiles
+   - Environmental hazards and interactive battlefield elements
+   - Formation-specific abilities and combo attacks
+   - Battle replay system and combat analytics
+   - **Status:** Core system complete, needs enhancements
+
+6. **📋 Performance & Polish (ONGOING)**  
+   - WebGL optimizations and GPU acceleration
+   - Large-scale battle performance (20+ units)
+   - Memory management and asset optimization
+   - Mobile device compatibility and touch controls
+   - Accessibility features and internationalization
+   - **Status:** Continuous improvement
 
 #### **Tech Tasks:**  
-- **Priority 1:** Complete skill system integration and UI
-- **Priority 2:** Finish overworld system integration
-- **Priority 3:** Implement unit promotion system
-- **Priority 4:** Add equipment crafting and enhancement
-- **Priority 5:** Create siege equipment system
-- **Priority 6:** Optimize rendering with WebGL 2.0 and NVIDIA extensions
+- **Priority 1:** Implement equipment crafting system with blacksmith integration
+- **Priority 2:** Create advanced AI faction system with strategic behavior
+- **Priority 3:** Add siege equipment crafting and pre-battle effects
+- **Priority 4:** Develop dynamic event system with quest generation
+- **Priority 5:** Enhance battle system with environmental effects
+- **Priority 6:** Optimize performance for larger battles and mobile devices
 
 #### **Dependencies:**  
-- Phase 2 completion (✅ DONE)  
+- Phase 2 completion (✅ DONE)
+- Advanced Squad Movement System (✅ COMPLETED)  
 
 ---
 

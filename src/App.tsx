@@ -1,6 +1,6 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
-import { Layout } from './components/Layout'
+import { ResponsiveLayout } from './components/ui/ResponsiveLayout'
 import { HomePage } from './pages/HomePage'
 import { SquadEditorPage } from './pages/SquadEditorPage'
 import { BattlePage } from './pages/BattlePage'
@@ -11,17 +11,17 @@ import { UnitsPage } from './pages/UnitsPage'
 
 function App() {
   return (
-    <Layout>
+    <ResponsiveLayout>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/units" element={<UnitsPage />} />
         <Route path="/squads" element={<SquadEditorPage />} />
         <Route path="/battle" element={<BattlePage />} />
         <Route path="/battle3d" element={<Battle3DPage />} />
         <Route path="/overworld" element={<OverworldPage />} />
         <Route path="/overworld3d" element={<Overworld3DPage />} />
-        <Route path="/units" element={<UnitsPage />} />
       </Routes>
-    </Layout>
+    </ResponsiveLayout>
   )
 }
 

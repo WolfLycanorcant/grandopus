@@ -1,11 +1,19 @@
 /**
- * Battle system exports
- * Central export point for all battle-related functionality
+ * Battle System - Core gameplay loop implementation
  */
 
-// Core types
-export * from './types';
+export { BattleEngine } from './BattleEngine'
+export { BattleManager } from './BattleManager'
+export * from './types'
+export * from './BattleCalculations'
 
-// Core classes
-export { BattleEngine } from './BattleEngine';
-export { DamageCalculator } from './DamageCalculator';
+// Re-export for convenience
+export type {
+  BattleResult,
+  BattleTurn,
+  CombatAction,
+  DamageResult,
+  StatusEffect,
+  BattleConfiguration,
+  CombatStats
+} from './types'

@@ -1,8 +1,9 @@
 import { create } from 'zustand'
 import { Unit, UnitFactory } from '../core/units'
 import { Squad, SquadFactory, SQUAD_PRESETS } from '../core/squads'
-import { BattleEngine, BattleResult, BattleLogEntry } from '../core/battle'
+import { BattleManager, BattleResult, BattleTurn, BattleState } from '../core/battle'
 import { OverworldManager, HexCoordinate, BuildingType, Faction, ResourceType } from '../core/overworld'
+import { SaveManager, GameSaveData, SaveSlotInfo } from '../core/save'
 
 interface GameState {
   // Units
@@ -14,9 +15,10 @@ interface GameState {
   selectedSquad: Squad | null
 
   // Battle
-  currentBattle: BattleEngine | null
+  battleManager: BattleManager | null
+  currentBattle: BattleState | null
   battleResult: BattleResult | null
-  battleLog: BattleLogEntry[]
+  battleLog: BattleTurn[]
 
   // Overworld
   overworldManager: OverworldManager | null
@@ -60,6 +62,15 @@ interface GameActions {
   // Promotion actions
   promoteUnit: (unitId: string, advancedArchetype: string, resourcesUsed: Record<ResourceType, number>) => void
 
+  // Save/Load actions
+  saveGame: (slotId: string) => boolean
+  loadGame: (slotId: string) => boolean
+  autoSave: () => boolean
+  getSaveSlots: () => SaveSlotInfo[]
+  deleteSave: (slotId: string) => boolean
+  exportSave: (slotId: string) => boolean
+  importSave: (file: File, targetSlotId: string) => Promise<boolean>
+
   // Utility actions
   setError: (error: string | null) => void
   setLoading: (loading: boolean) => void
@@ -74,6 +85,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   selectedUnit: null,
   squads: [],
   selectedSquad: null,
+  battleManager: null,
   currentBattle: null,
   battleResult: null,
   battleLog: [],
@@ -210,9 +222,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // Battle actions
   startBattle: (attackingSquad, defendingSquad) => {
     try {
-      const battle = new BattleEngine(attackingSquad, defendingSquad)
+      const state = get()
+      
+      // Initialize battle manager if not exists
+      let battleManager = state.battleManager
+      if (!battleManager) {
+        battleManager = new BattleManager()
+      }
+
+      // Start the battle
+      const battleState = battleManager.startBattle(attackingSquad, defendingSquad)
+      
       set({
-        currentBattle: battle,
+        battleManager,
+        currentBattle: battleState,
         battleResult: null,
         battleLog: [],
         error: null
@@ -222,28 +245,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  executeBattle: () => {
+  executeBattle: async () => {
     try {
-      const { currentBattle } = get()
-      if (!currentBattle) {
-        throw new Error('No battle in progress')
+      const { battleManager } = get()
+      if (!battleManager) {
+        throw new Error('No battle manager available')
       }
 
-      const result = currentBattle.executeBattle()
-      const log = currentBattle.getBattleLog()
-
-      set({
-        battleResult: result,
-        battleLog: log,
-        currentBattle: null,
-        error: null
-      })
+      // Execute battle automatically with 1 second delays for visualization
+      const result = await battleManager.executeBattleAuto(1000)
+      
+      if (result) {
+        set({
+          battleResult: result,
+          currentBattle: null,
+          error: null
+        })
+      }
     } catch (error) {
       set({ error: error instanceof Error ? error.message : 'Battle execution failed' })
     }
   },
 
   clearBattle: () => {
+    const { battleManager } = get()
+    if (battleManager) {
+      battleManager.reset()
+    }
+    
     set({
       currentBattle: null,
       battleResult: null,
@@ -415,6 +444,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
 
       overworldManager.endTurn()
+      
+      // Execute AI turn after player ends their turn
+      if (overworldManager.aiIntegration) {
+        overworldManager.aiIntegration.onTurnEnd()
+      }
+      
       const partialResources = overworldManager.getPlayerResources(Faction.PLAYER)
 
       // Ensure all resource types have values
@@ -524,11 +559,169 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ isLoading: loading })
   },
 
+  // Save/Load actions
+  saveGame: (slotId) => {
+    try {
+      const state = get()
+      
+      const gameData: GameSaveData = {
+        units: state.units.map(unit => unit.toJSON()),
+        squads: state.squads.map(squad => squad.toJSON()),
+        currentTurn: state.currentTurn,
+        playerResources: state.playerResources,
+        overworldState: state.overworldManager?.getState(),
+        settings: {
+          difficulty: 'normal',
+          autoSave: true,
+          soundEnabled: true,
+          musicEnabled: true
+        },
+        statistics: {
+          battlesWon: 0,
+          battlesLost: 0,
+          unitsCreated: state.units.length,
+          squadsCreated: state.squads.length,
+          totalPlayTime: 0
+        }
+      }
+
+      const success = SaveManager.saveGame(slotId, gameData)
+      
+      if (success) {
+        set({ error: null })
+      } else {
+        set({ error: 'Failed to save game' })
+      }
+      
+      return success
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Failed to save game' })
+      return false
+    }
+  },
+
+  loadGame: (slotId) => {
+    try {
+      set({ isLoading: true })
+      
+      const gameData = SaveManager.loadGame(slotId)
+      
+      if (!gameData) {
+        set({ 
+          error: 'Failed to load game - save data not found',
+          isLoading: false 
+        })
+        return false
+      }
+
+      // Reconstruct units from saved data
+      const units = gameData.units.map(unitData => {
+        // This would need a proper deserialization method
+        return UnitFactory.createUnit({
+          name: unitData.name,
+          race: unitData.race,
+          archetype: unitData.archetype,
+          level: unitData.experience?.currentLevel || 1
+        })
+      })
+
+      // Reconstruct squads from saved data
+      const squads = gameData.squads.map(squadData => {
+        return SquadFactory.createSquad({
+          name: squadData.name,
+          gameProgressLevel: 1
+        })
+      })
+
+      // Initialize overworld if state exists
+      let overworldManager = null
+      if (gameData.overworldState) {
+        overworldManager = new OverworldManager(20, 15)
+        // Would need to restore overworld state here
+      }
+
+      set({
+        units,
+        squads,
+        currentTurn: gameData.currentTurn,
+        playerResources: gameData.playerResources,
+        overworldManager,
+        selectedUnit: null,
+        selectedSquad: squads[0] || null,
+        isLoading: false,
+        error: null
+      })
+
+      return true
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to load game',
+        isLoading: false
+      })
+      return false
+    }
+  },
+
+  autoSave: () => {
+    const state = get()
+    
+    const gameData: GameSaveData = {
+      units: state.units.map(unit => unit.toJSON()),
+      squads: state.squads.map(squad => squad.toJSON()),
+      currentTurn: state.currentTurn,
+      playerResources: state.playerResources,
+      overworldState: state.overworldManager?.getState(),
+      settings: {
+        difficulty: 'normal',
+        autoSave: true,
+        soundEnabled: true,
+        musicEnabled: true
+      },
+      statistics: {
+        battlesWon: 0,
+        battlesLost: 0,
+        unitsCreated: state.units.length,
+        squadsCreated: state.squads.length,
+        totalPlayTime: 0
+      }
+    }
+
+    return SaveManager.autoSave(gameData)
+  },
+
+  getSaveSlots: () => {
+    return SaveManager.getSaveSlots()
+  },
+
+  deleteSave: (slotId) => {
+    return SaveManager.deleteSave(slotId)
+  },
+
+  exportSave: (slotId) => {
+    return SaveManager.exportSave(slotId)
+  },
+
+  importSave: async (file, targetSlotId) => {
+    return await SaveManager.importSave(file, targetSlotId)
+  },
+
   initializeGame: () => {
     try {
       set({ isLoading: true })
 
-      // Create some starter units
+      // Try to load auto-save first
+      const autoSaveData = SaveManager.loadAutoSave()
+      
+      if (autoSaveData) {
+        // Load from auto-save
+        const success = get().loadGame('auto')
+        if (success) {
+          console.log('Game loaded from auto-save')
+          return
+        }
+      }
+
+      // Create new game with starter content
       const starterUnits = [
         UnitFactory.createRandomUnit(1),
         UnitFactory.createRandomUnit(1),
@@ -537,7 +730,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
         UnitFactory.createRandomUnit(3),
       ]
 
-      // Create some preset squads
       const starterSquads = [
         SquadFactory.createFromPreset(SQUAD_PRESETS.BALANCED_STARTER, 'Player Squad'),
         SquadFactory.createFromPreset(SQUAD_PRESETS.ELITE_KNIGHTS, 'AI Squad')
@@ -550,6 +742,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         isLoading: false,
         error: null
       })
+
+      // Auto-save the initial game state
+      setTimeout(() => {
+        get().autoSave()
+      }, 1000)
+
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to initialize game',

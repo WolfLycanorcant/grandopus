@@ -1,564 +1,304 @@
-import { Unit, FormationPosition } from '../units';
-import { Squad } from '../squads';
-import { DamageCalculator } from './DamageCalculator';
-import { 
-  BattleState, 
-  BattlePhase, 
-  BattleLogEntry, 
-  BattleResult, 
-  VictoryCondition,
-  InitiativeResult,
-  FormationCombatBonus,
-  BattleConfig,
-  BattleStatistics
-} from './types';
-import { WeaponType, DamageType } from '../equipment/types';
-import {
-  InvalidCombatStateException,
-  ValidationUtils
-} from '../../exceptions';
+import { Unit } from '../units'
+import { Squad } from '../squads'
+import { EquipmentSlot } from '../equipment/types'
+import { BattleResult, BattlePhase, BattleTurn, CombatAction, DamageResult, BattleState } from './types'
+import { calculateDamage, applyStatusEffects, checkVictoryConditions } from './BattleCalculations'
 
 /**
- * Core battle engine implementing Ogre Battle style combat
+ * Core Battle Engine - Executes turn-based tactical combat
  */
 export class BattleEngine {
-  private battleState: BattleState;
-  private config: BattleConfig;
-  
-  constructor(
-    attackingSquad: Squad,
-    defendingSquad: Squad,
-    config: Partial<BattleConfig> = {}
-  ) {
-    // Validate squads
-    this.validateSquads(attackingSquad, defendingSquad);
-    
-    // Set default config
-    this.config = {
-      maxRounds: 10,
-      allowRetreat: true,
-      ...config
-    };
-    
-    // Initialize battle state
-    this.battleState = {
-      id: this.generateBattleId(),
-      phase: BattlePhase.SETUP,
-      currentRound: 0,
-      maxRounds: this.config.maxRounds,
+  private currentBattle: BattleState | null = null
+  private battleLog: string[] = []
+
+  /**
+   * Initialize a new battle between two squads
+   */
+  public initializeBattle(attackingSquad: Squad, defendingSquad: Squad): BattleState {
+    this.battleLog = []
+
+    const battle: BattleState = {
+      id: `battle_${Date.now()}`,
       attackingSquad,
       defendingSquad,
-      battleLog: [],
-      isComplete: false
-    };
-    
-    this.logEvent('info', 'Battle initialized', {
-      attacker: attackingSquad.name,
-      defender: defendingSquad.name
-    });
-  }
-  
-  /**
-   * Execute the complete battle
-   */
-  public executeBattle(): BattleResult {
-    try {
-      // Setup phase
-      this.setupBattle();
-      
-      // Main battle loop
-      while (!this.battleState.isComplete && this.battleState.currentRound < this.config.maxRounds) {
-        this.executeRound();
-      }
-      
-      // Resolution phase
-      return this.resolveBattle();
-      
-    } catch (error) {
-      this.logEvent('info', `Battle error: ${error}`, { error: error.toString() });
-      throw error;
+      currentPhase: BattlePhase.INITIATIVE,
+      currentTurn: 1,
+      turnOrder: [],
+      activeUnitIndex: 0,
+      isComplete: false,
+      winner: null,
+      battleLog: []
     }
+
+    // Calculate initiative order
+    battle.turnOrder = this.calculateInitiativeOrder(attackingSquad, defendingSquad)
+    battle.currentPhase = BattlePhase.COMBAT
+
+    this.currentBattle = battle
+    this.log(`Battle initiated: ${attackingSquad.name} vs ${defendingSquad.name}`)
+
+    return battle
   }
-  
+
   /**
-   * Setup battle (calculate initiative, apply pre-battle effects)
+   * Execute the next combat action in the battle
    */
-  private setupBattle(): void {
-    this.battleState.phase = BattlePhase.SETUP;
-    this.logEvent('info', 'Battle setup phase');
-    
-    // Apply formation bonuses
-    this.applyFormationBonuses();
-    
-    // Log squad compositions
-    this.logSquadComposition(this.battleState.attackingSquad, 'Attacking');
-    this.logSquadComposition(this.battleState.defendingSquad, 'Defending');
-    
-    this.battleState.phase = BattlePhase.INITIATIVE;
-  }
-  
-  /**
-   * Execute a single battle round
-   */
-  private executeRound(): void {
-    this.battleState.currentRound++;
-    this.logEvent('info', `=== Round ${this.battleState.currentRound} ===`);
-    
-    // Calculate initiative for this round
-    const attackerInitiative = this.calculateSquadInitiative(this.battleState.attackingSquad);
-    const defenderInitiative = this.calculateSquadInitiative(this.battleState.defendingSquad);
-    
-    this.logEvent('info', `Initiative - Attacker: ${attackerInitiative}, Defender: ${defenderInitiative}`);
-    
-    // Determine who goes first (higher initiative attacks first)
-    if (attackerInitiative >= defenderInitiative) {
-      this.executeAttackPhase(this.battleState.attackingSquad, this.battleState.defendingSquad);
-      if (!this.checkBattleEnd()) {
-        this.executeCounterPhase(this.battleState.defendingSquad, this.battleState.attackingSquad);
-      }
-    } else {
-      this.executeAttackPhase(this.battleState.defendingSquad, this.battleState.attackingSquad);
-      if (!this.checkBattleEnd()) {
-        this.executeCounterPhase(this.battleState.attackingSquad, this.battleState.defendingSquad);
-      }
+  public executeNextAction(): BattleTurn | null {
+    if (!this.currentBattle || this.currentBattle.isComplete) {
+      return null
     }
-    
+
+    const battle = this.currentBattle
+    const activeUnit = battle.turnOrder[battle.activeUnitIndex]
+
+    if (!activeUnit || activeUnit.currentHp <= 0) {
+      // Skip dead units
+      this.advanceToNextUnit()
+      return this.executeNextAction()
+    }
+
+    // Determine action based on unit AI or player input
+    const action = this.determineUnitAction(activeUnit, battle)
+    const result = this.executeAction(action, battle)
+
+    // Create turn result
+    const turn: BattleTurn = {
+      turnNumber: battle.currentTurn,
+      activeUnit,
+      action,
+      result,
+      battleState: { ...battle }
+    }
+
     // Check for battle end conditions
-    this.checkBattleEnd();
+    this.checkBattleEnd(battle)
+
+    // Advance to next unit
+    this.advanceToNextUnit()
+
+    return turn
   }
-  
+
   /**
-   * Execute attack phase for a squad
+   * Calculate initiative order for all units
    */
-  private executeAttackPhase(attackingSquad: Squad, defendingSquad: Squad): void {
-    this.battleState.phase = BattlePhase.ATTACK;
-    this.logEvent('info', `${attackingSquad.name} attacks!`);
-    
-    // Get attacking units in formation order (front row first)
-    const attackers = [
-      ...attackingSquad.getFrontRowUnits(),
-      ...attackingSquad.getBackRowUnits()
-    ].filter(unit => unit.isAlive());
-    
-    // Each attacker attacks
-    for (const attacker of attackers) {
-      if (!attacker.isAlive()) continue;
-      
-      // Select target
-      const target = this.selectTarget(defendingSquad);
-      if (!target) break; // No valid targets
-      
-      // Execute attack
-      this.executeAttack(attacker, target, attackingSquad, defendingSquad);
-      
-      // Check if defending squad is eliminated
-      if (this.isSquadEliminated(defendingSquad)) {
-        break;
-      }
+  private calculateInitiativeOrder(attackingSquad: Squad, defendingSquad: Squad): Unit[] {
+    const allUnits: Unit[] = [
+      ...attackingSquad.getUnits(),
+      ...defendingSquad.getUnits()
+    ]
+
+    // Sort by initiative (SKL + random factor)
+    return allUnits
+      .filter(unit => unit.currentHp > 0)
+      .sort((a, b) => {
+        const aInitiative = a.getCurrentStats().skl + Math.random() * 10
+        const bInitiative = b.getCurrentStats().skl + Math.random() * 10
+        return bInitiative - aInitiative
+      })
+  }
+
+  /**
+   * Determine what action a unit should take
+   */
+  private determineUnitAction(unit: Unit, battle: BattleState): CombatAction {
+    const isAttacker = battle.attackingSquad.getUnits().includes(unit)
+    const enemySquad = isAttacker ? battle.defendingSquad : battle.attackingSquad
+    const enemyUnits = enemySquad.getUnits().filter(u => u.currentHp > 0)
+
+    if (enemyUnits.length === 0) {
+      return { type: 'wait', actor: unit }
+    }
+
+    // Simple AI: Attack the weakest enemy
+    const target = enemyUnits.reduce((weakest, current) =>
+      current.currentHp < weakest.currentHp ? current : weakest
+    )
+
+    return {
+      type: 'attack',
+      actor: unit,
+      target,
+      weapon: unit.equipment.get(EquipmentSlot.WEAPON)
     }
   }
-  
+
   /**
-   * Execute counter-attack phase
+   * Execute a combat action and return the result
    */
-  private executeCounterPhase(counterSquad: Squad, originalAttacker: Squad): void {
-    this.battleState.phase = BattlePhase.COUNTER;
-    this.logEvent('info', `${counterSquad.name} counter-attacks!`);
-    
-    // Counter-attacks work the same as regular attacks
-    this.executeAttackPhase(counterSquad, originalAttacker);
+  private executeAction(action: CombatAction, battle: BattleState): DamageResult | null {
+    switch (action.type) {
+      case 'attack':
+        if (!action.target) return null
+        return this.executeAttack(action.actor, action.target, battle)
+
+      case 'cast_spell':
+        if (!action.target || !action.spell) return null
+        return this.executeCastSpell(action.actor, action.target, action.spell, battle)
+
+      case 'use_item':
+        if (!action.item) return null
+        return this.executeUseItem(action.actor, action.item, battle)
+
+      case 'wait':
+        this.log(`${action.actor.name} waits`)
+        return null
+
+      default:
+        return null
+    }
   }
-  
+
   /**
-   * Execute a single attack between two units
+   * Execute an attack action
    */
-  private executeAttack(attacker: Unit, target: Unit, attackingSquad: Squad, defendingSquad: Squad): void {
-    // Determine weapon and damage type
-    const weaponType = this.selectWeaponType(attacker);
-    const damageType = DamageCalculator.getWeaponDamageType(weaponType);
-    const baseDamage = DamageCalculator.getBaseWeaponDamage(weaponType, attacker.experience.currentLevel);
-    
-    // Get formation bonuses
-    const attackerBonus = this.getFormationBonus(attacker, attackingSquad);
-    const defenderBonus = this.getFormationBonus(target, defendingSquad);
-    
-    // Calculate damage
-    const damageResult = DamageCalculator.calculateDamage(
-      attacker,
-      target,
-      weaponType,
-      baseDamage,
-      damageType,
-      {
-        attacker: attackerBonus,
-        defender: defenderBonus
-      }
-    );
-    
+  private executeAttack(attacker: Unit, target: Unit, battle: BattleState): DamageResult {
+    const damage = calculateDamage(attacker, target)
+    const actualDamage = Math.min(damage.totalDamage, target.currentHp)
+
     // Apply damage
-    const actualDamage = target.takeDamage(damageResult.finalDamage);
-    
+    target.currentHp -= actualDamage
+
     // Log the attack
-    const critText = damageResult.isCritical ? ' (CRITICAL!)' : '';
-    this.logEvent('attack', 
-      `${attacker.name} attacks ${target.name} with ${weaponType} for ${actualDamage} ${damageType} damage${critText}`,
-      {
-        attacker: attacker.id,
-        target: target.id,
-        weapon: weaponType,
-        baseDamage: damageResult.baseDamage,
-        finalDamage: actualDamage,
-        damageType,
-        isCritical: damageResult.isCritical,
-        modifiers: damageResult.modifiers
-      },
-      attacker,
-      target,
-      actualDamage
-    );
-    
-    // Check if target is defeated
-    if (!target.isAlive()) {
-      this.logEvent('info', `${target.name} has been defeated!`, {
-        defeatedUnit: target.id
-      });
-      
-      // Award experience to attacker
-      attacker.addExperience(target.experience.currentLevel * 10);
+    this.log(`${attacker.name} attacks ${target.name} for ${actualDamage} damage`)
+
+    if (target.currentHp <= 0) {
+      this.log(`${target.name} is defeated!`)
+      target.currentHp = 0
     }
-    
-    // Increase weapon proficiency
-    attacker.increaseWeaponProficiency(weaponType, 5);
-  }
-  
-  /**
-   * Select the best weapon type for a unit to use
-   */
-  private selectWeaponType(unit: Unit): WeaponType {
-    // Get all weapon proficiencies
-    const proficiencies = Array.from(unit.weaponProficiencies.entries());
-    
-    if (proficiencies.length === 0) {
-      // Default to basic weapon based on archetype
-      const stats = unit.getCurrentStats();
-      return stats.mag > stats.str ? WeaponType.STAFF : WeaponType.SWORD;
-    }
-    
-    // Select weapon with highest proficiency
-    const bestWeapon = proficiencies.reduce((best, [weaponType, proficiency]) => {
-      if (!best || proficiency.level > best[1].level) {
-        return [weaponType, proficiency];
-      }
-      return best;
-    });
-    
-    return bestWeapon[0];
-  }
-  
-  /**
-   * Select target for attack (prioritize front row, then back row)
-   */
-  private selectTarget(defendingSquad: Squad): Unit | null {
-    // Prioritize front row targets
-    const frontRow = defendingSquad.getFrontRowUnits().filter(unit => unit.isAlive());
-    if (frontRow.length > 0) {
-      // Target lowest HP unit in front row
-      return frontRow.reduce((lowest, unit) => 
-        unit.currentHp < lowest.currentHp ? unit : lowest
-      );
-    }
-    
-    // Fall back to back row
-    const backRow = defendingSquad.getBackRowUnits().filter(unit => unit.isAlive());
-    if (backRow.length > 0) {
-      return backRow.reduce((lowest, unit) => 
-        unit.currentHp < lowest.currentHp ? unit : lowest
-      );
-    }
-    
-    return null; // No valid targets
-  }
-  
-  /**
-   * Get formation bonus for a unit
-   */
-  private getFormationBonus(unit: Unit, squad: Squad): FormationCombatBonus | undefined {
-    if (!unit.formationPosition) return undefined;
-    
-    const isFrontRow = [
-      FormationPosition.FRONT_LEFT,
-      FormationPosition.FRONT_CENTER,
-      FormationPosition.FRONT_RIGHT
-    ].includes(unit.formationPosition);
-    
-    const formationBonuses = Squad.getFormationBonuses();
-    
+
     return {
-      unit,
-      position: isFrontRow ? 'front' : 'back',
-      bonuses: isFrontRow ? formationBonuses.frontRow : formationBonuses.backRow
-    };
+      ...damage,
+      actualDamage,
+      targetDefeated: target.currentHp <= 0
+    }
   }
-  
+
   /**
-   * Calculate squad initiative (average of all living units)
+   * Execute a spell casting action
    */
-  private calculateSquadInitiative(squad: Squad): number {
-    const livingUnits = squad.getUnits().filter(unit => unit.isAlive());
-    
-    if (livingUnits.length === 0) return 0;
-    
-    const totalInitiative = livingUnits.reduce((total, unit) => {
-      const stats = unit.getCurrentStats();
-      return total + (stats.skl + stats.str); // Speed = SKL + STR (simplified)
-    }, 0);
-    
-    return Math.floor(totalInitiative / livingUnits.length);
-  }
-  
-  /**
-   * Check if battle should end
-   */
-  private checkBattleEnd(): boolean {
-    // Check for elimination
-    if (this.isSquadEliminated(this.battleState.attackingSquad)) {
-      this.battleState.winner = this.battleState.defendingSquad;
-      this.battleState.isComplete = true;
-      return true;
-    }
-    
-    if (this.isSquadEliminated(this.battleState.defendingSquad)) {
-      this.battleState.winner = this.battleState.attackingSquad;
-      this.battleState.isComplete = true;
-      return true;
-    }
-    
-    // Check for round limit
-    if (this.battleState.currentRound >= this.config.maxRounds) {
-      // Determine winner by remaining HP
-      const attackerHp = this.getSquadTotalHp(this.battleState.attackingSquad);
-      const defenderHp = this.getSquadTotalHp(this.battleState.defendingSquad);
-      
-      this.battleState.winner = attackerHp > defenderHp 
-        ? this.battleState.attackingSquad 
-        : this.battleState.defendingSquad;
-      this.battleState.isComplete = true;
-      return true;
-    }
-    
-    return false;
-  }
-  
-  /**
-   * Check if a squad is eliminated (all units defeated)
-   */
-  private isSquadEliminated(squad: Squad): boolean {
-    return squad.getUnits().every(unit => !unit.isAlive());
-  }
-  
-  /**
-   * Get total HP of all living units in squad
-   */
-  private getSquadTotalHp(squad: Squad): number {
-    return squad.getUnits()
-      .filter(unit => unit.isAlive())
-      .reduce((total, unit) => total + unit.currentHp, 0);
-  }
-  
-  /**
-   * Resolve battle and create result
-   */
-  private resolveBattle(): BattleResult {
-    this.battleState.phase = BattlePhase.RESOLUTION;
-    
-    if (!this.battleState.winner) {
-      throw new InvalidCombatStateException('resolution', 'determine winner');
-    }
-    
-    const winner = this.battleState.winner;
-    const loser = winner === this.battleState.attackingSquad 
-      ? this.battleState.defendingSquad 
-      : this.battleState.attackingSquad;
-    
-    // Determine victory condition
-    let victoryCondition = VictoryCondition.ELIMINATION;
-    if (this.battleState.currentRound >= this.config.maxRounds) {
-      victoryCondition = VictoryCondition.TIMEOUT;
-    }
-    
-    // Calculate casualties
-    const winnerCasualties = winner.getUnits().filter(unit => !unit.isAlive());
-    const loserCasualties = loser.getUnits().filter(unit => !unit.isAlive());
-    
-    // Calculate experience rewards
-    const baseExp = loser.getStats().averageLevel * 20;
-    const winnerExp = Math.floor(baseExp * (1 + loserCasualties.length * 0.1));
-    const loserExp = Math.floor(baseExp * 0.3); // Consolation experience
-    
-    // Award experience to surviving units
-    winner.getUnits().filter(unit => unit.isAlive()).forEach(unit => {
-      unit.addExperience(winnerExp);
-    });
-    
-    loser.getUnits().filter(unit => unit.isAlive()).forEach(unit => {
-      unit.addExperience(loserExp);
-    });
-    
-    // Update squad experience
-    if (winner === this.battleState.attackingSquad) {
-      winner.experience.battlesWon++;
-    } else {
-      winner.experience.battlesWon++;
-    }
-    loser.experience.battlesLost++;
-    
-    winner.experience.totalBattles++;
-    loser.experience.totalBattles++;
-    
-    // Calculate statistics
-    const statistics = this.calculateBattleStatistics();
-    
-    this.logEvent('info', `Battle complete! ${winner.name} wins by ${victoryCondition}`, {
-      winner: winner.id,
-      loser: loser.id,
-      rounds: this.battleState.currentRound,
-      victoryCondition
-    });
-    
-    this.battleState.phase = BattlePhase.COMPLETE;
-    
+  private executeCastSpell(caster: Unit, target: Unit, spell: any, battle: BattleState): DamageResult {
+    // Placeholder for spell system
+    const damage = Math.floor(caster.getCurrentStats().mag * 1.5)
+    const actualDamage = Math.min(damage, target.currentHp)
+
+    target.currentHp -= actualDamage
+    this.log(`${caster.name} casts ${spell.name} on ${target.name} for ${actualDamage} damage`)
+
     return {
-      winner,
-      loser,
-      victoryCondition,
-      rounds: this.battleState.currentRound,
-      casualties: {
-        winner: winnerCasualties,
-        loser: loserCasualties
-      },
-      experience: {
-        winner: winnerExp,
-        loser: loserExp
-      },
-      statistics
-    };
-  }
-  
-  /**
-   * Calculate detailed battle statistics
-   */
-  private calculateBattleStatistics(): BattleStatistics {
-    const stats: BattleStatistics = {
-      totalDamageDealt: {},
-      totalDamageTaken: {},
-      totalHealing: {},
-      criticalHits: {},
-      accuracyRate: {},
-      abilitiesUsed: {}
-    };
-    
-    // Analyze battle log for statistics
-    for (const entry of this.battleState.battleLog) {
-      if (entry.type === 'attack' && entry.attacker && entry.target && entry.damage) {
-        // Damage dealt
-        const attackerId = entry.attacker.id;
-        stats.totalDamageDealt[attackerId] = (stats.totalDamageDealt[attackerId] || 0) + entry.damage;
-        
-        // Damage taken
-        const targetId = entry.target.id;
-        stats.totalDamageTaken[targetId] = (stats.totalDamageTaken[targetId] || 0) + entry.damage;
-        
-        // Critical hits
-        if (entry.details?.isCritical) {
-          stats.criticalHits[attackerId] = (stats.criticalHits[attackerId] || 0) + 1;
-        }
-      }
-    }
-    
-    return stats;
-  }
-  
-  /**
-   * Apply formation bonuses to squads
-   */
-  private applyFormationBonuses(): void {
-    this.logEvent('info', 'Applying formation bonuses');
-    
-    // Formation bonuses are applied during damage calculation
-    // This method could be used for pre-battle formation effects
-  }
-  
-  /**
-   * Log squad composition
-   */
-  private logSquadComposition(squad: Squad, label: string): void {
-    const units = squad.getUnits();
-    const composition = units.map(unit => 
-      `${unit.name} (Lv.${unit.experience.currentLevel} ${unit.race} ${unit.archetype}, ${unit.currentHp}/${unit.getMaxStats().hp} HP)`
-    ).join(', ');
-    
-    this.logEvent('info', `${label} Squad: ${composition}`);
-  }
-  
-  /**
-   * Validate squads before battle
-   */
-  private validateSquads(attackingSquad: Squad, defendingSquad: Squad): void {
-    if (!attackingSquad.isValidForCombat()) {
-      throw new InvalidCombatStateException('setup', 'start battle with invalid attacking squad');
-    }
-    
-    if (!defendingSquad.isValidForCombat()) {
-      throw new InvalidCombatStateException('setup', 'start battle with invalid defending squad');
+      baseDamage: damage,
+      totalDamage: damage,
+      actualDamage,
+      damageType: 'magical',
+      isCritical: false,
+      targetDefeated: target.currentHp <= 0
     }
   }
-  
+
   /**
-   * Generate unique battle ID
+   * Execute an item use action
    */
-  private generateBattleId(): string {
-    return `battle_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  private executeUseItem(user: Unit, item: any, battle: BattleState): DamageResult | null {
+    // Placeholder for item system
+    this.log(`${user.name} uses ${item.name}`)
+    return null
   }
-  
+
   /**
-   * Log battle event
+   * Check if the battle should end
    */
-  private logEvent(
-    type: BattleLogEntry['type'], 
-    message: string, 
-    details?: Record<string, any>,
-    attacker?: Unit,
-    target?: Unit,
-    damage?: number,
-    healing?: number
-  ): void {
-    const entry: BattleLogEntry = {
-      round: this.battleState.currentRound,
-      phase: this.battleState.phase,
-      timestamp: new Date(),
-      type,
-      message,
-      attacker,
-      target,
-      damage,
-      healing,
-      details
-    };
-    
-    this.battleState.battleLog.push(entry);
+  private checkBattleEnd(battle: BattleState): void {
+    const attackingAlive = battle.attackingSquad.getUnits().some(u => u.currentHp > 0)
+    const defendingAlive = battle.defendingSquad.getUnits().some(u => u.currentHp > 0)
+
+    if (!attackingAlive) {
+      battle.isComplete = true
+      battle.winner = battle.defendingSquad
+      this.log(`${battle.defendingSquad.name} wins the battle!`)
+    } else if (!defendingAlive) {
+      battle.isComplete = true
+      battle.winner = battle.attackingSquad
+      this.log(`${battle.attackingSquad.name} wins the battle!`)
+    }
   }
-  
+
   /**
-   * Get current battle state (for external monitoring)
+   * Advance to the next unit in turn order
    */
-  public getBattleState(): Readonly<BattleState> {
-    return { ...this.battleState };
+  private advanceToNextUnit(): void {
+    if (!this.currentBattle) return
+
+    this.currentBattle.activeUnitIndex++
+
+    if (this.currentBattle.activeUnitIndex >= this.currentBattle.turnOrder.length) {
+      // New round
+      this.currentBattle.activeUnitIndex = 0
+      this.currentBattle.currentTurn++
+      this.log(`--- Turn ${this.currentBattle.currentTurn} ---`)
+    }
   }
-  
+
   /**
-   * Get battle log
+   * Get the current battle state
    */
-  public getBattleLog(): BattleLogEntry[] {
-    return [...this.battleState.battleLog];
+  public getCurrentBattle(): BattleState | null {
+    return this.currentBattle
+  }
+
+  /**
+   * Get battle results
+   */
+  public getBattleResult(): BattleResult | null {
+    if (!this.currentBattle || !this.currentBattle.isComplete) {
+      return null
+    }
+
+    const battle = this.currentBattle
+    return {
+      winner: battle.winner!,
+      loser: battle.winner === battle.attackingSquad ? battle.defendingSquad : battle.attackingSquad,
+      turnsElapsed: battle.currentTurn,
+      battleLog: [...this.battleLog],
+      casualties: this.calculateCasualties(battle),
+      experienceGained: this.calculateExperienceGained(battle)
+    }
+  }
+
+  /**
+   * Calculate casualties from the battle
+   */
+  private calculateCasualties(battle: BattleState): { attacking: Unit[], defending: Unit[] } {
+    return {
+      attacking: battle.attackingSquad.getUnits().filter(u => u.currentHp <= 0),
+      defending: battle.defendingSquad.getUnits().filter(u => u.currentHp <= 0)
+    }
+  }
+
+  /**
+   * Calculate experience gained from the battle
+   */
+  private calculateExperienceGained(battle: BattleState): number {
+    const basExp = 100
+    const turnBonus = Math.max(0, 50 - battle.currentTurn * 2) // Bonus for quick victories
+    return basExp + turnBonus
+  }
+
+  /**
+   * Add entry to battle log
+   */
+  private log(message: string): void {
+    this.battleLog.push(message)
+    if (this.currentBattle) {
+      this.currentBattle.battleLog.push(message)
+    }
+    console.log(`[Battle] ${message}`)
+  }
+
+  /**
+   * Reset the battle engine
+   */
+  public reset(): void {
+    this.currentBattle = null
+    this.battleLog = []
   }
 }

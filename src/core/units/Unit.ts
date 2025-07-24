@@ -71,6 +71,10 @@ export class Unit {
   // Skills and abilities (legacy - will be replaced by skillManager)
   public unlockedSkills: Set<string>;
   public availableJobPoints: number;
+  
+  // Battle system integration
+  private temporaryModifiers: Map<string, any> = new Map();
+  private activeStatusEffects: StatusEffect[] = [];
 
   constructor(
     id: string,
@@ -520,6 +524,116 @@ export class Unit {
     const archetypeData = getArchetypeData(this.archetype);
     
     return `${this.name} (Lv.${this.experience.currentLevel} ${racialTraits.name} ${archetypeData.name})`;
+  }
+
+  /**
+   * Battle System Integration Methods
+   */
+
+  /**
+   * Add temporary modifier for battle effects
+   */
+  public addTemporaryModifier(id: string, modifier: any): void {
+    this.temporaryModifiers.set(id, modifier)
+  }
+
+  /**
+   * Remove temporary modifier
+   */
+  public removeTemporaryModifier(id: string): boolean {
+    return this.temporaryModifiers.delete(id)
+  }
+
+  /**
+   * Clear all temporary effects
+   */
+  public clearTemporaryEffects(): void {
+    this.temporaryModifiers.clear()
+    this.activeStatusEffects = []
+  }
+
+  /**
+   * Get active status effects for battle system
+   */
+  public getActiveStatusEffects(): StatusEffect[] {
+    return [...this.activeStatusEffects]
+  }
+
+  /**
+   * Add status effect for battle system
+   */
+  public addBattleStatusEffect(effect: StatusEffect): void {
+    this.activeStatusEffects.push(effect)
+  }
+
+  /**
+   * Remove expired status effects
+   */
+  public removeExpiredStatusEffects(): void {
+    this.activeStatusEffects = this.activeStatusEffects.filter(effect => effect.duration > 0)
+  }
+
+  /**
+   * Get weapon proficiency level as number
+   */
+  public getWeaponProficiencyLevel(weaponType: WeaponType): number {
+    const proficiency = this.weaponProficiencies.get(weaponType)
+    return proficiency ? proficiency.level : 0
+  }
+
+  /**
+   * Gain experience from battle
+   */
+  public gainExperience(exp: number): boolean {
+    return this.addExperience(exp)
+  }
+
+  /**
+   * Get weapon proficiency as percentage for battle calculations
+   */
+  public getWeaponProficiency(weaponType: WeaponType): number {
+    const proficiency = this.weaponProficiencies.get(weaponType)
+    return proficiency ? proficiency.level : 0
+  }
+
+  /**
+   * Check if unit can act in battle
+   */
+  public canAct(): boolean {
+    return this.isAlive() && !this.hasDisablingStatusEffect()
+  }
+
+  /**
+   * Check if unit has disabling status effects
+   */
+  private hasDisablingStatusEffect(): boolean {
+    return this.activeStatusEffects.some(effect => 
+      effect.type === 'debuff' && 
+      (effect.name === 'stun' || effect.name === 'sleep' || effect.name === 'paralysis')
+    )
+  }
+
+  /**
+   * Get battle display info
+   */
+  public getBattleInfo(): {
+    name: string
+    level: number
+    hp: number
+    maxHp: number
+    race: string
+    archetype: string
+    statusEffects: string[]
+  } {
+    return {
+      name: this.name,
+      level: this.experience.currentLevel,
+      hp: this.currentHp,
+      maxHp: this.getCurrentStats().hp,
+      race: this.race,
+      archetype: this.archetype,
+      statusEffects: this.activeStatusEffects.map(effect => effect.name)
+    }
   }
 
   /**
