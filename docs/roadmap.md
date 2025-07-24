@@ -27,27 +27,48 @@ A **web-first squad-based tactical war game** with deep customization, strategic
    - Validation utilities and type-safe error handling
    - Automatic fallback mechanisms and user notifications
 
-2. **Unit Data Structure & Stats**  
-   - Define `Unit` class with stats (HP, STR, MAG, etc.), race, and archetype.  
-   - Implement stat growth formulas (e.g., `HP = base_HP + level * growth_rate`).  
+2. **✅ Unit Data Structure & Stats (COMPLETED)**  
+   - Complete `Unit` class with all stats (HP, STR, MAG, SKL, ARM, LDR)
+   - 10 races with unique traits and abilities (Human, Elf, Dwarf, Beast, Dragon, etc.)
+   - 9 archetypes with balanced stat growth and weapon proficiencies
+   - Level-based progression with experience and job points
+   - Weapon proficiency system and status effects
+   - `UnitFactory` with validation and preset creation
 
-3. **Squad System**  
-   - Squad size calculation based on leadership (LDR) and game progress.  
-   - Formation grid (3x3 grid for 9 units, expandable to 12).  
+3. **✅ Squad System (COMPLETED)**  
+   - Leadership-based squad capacity: `Base + (Leader_LDR // 10)`, capped at 12 units
+   - 3x2 formation grid with front/back row positioning and bonuses
+   - Large creature support (Beasts/Dragons take 2 slots)
+   - Auto-positioning based on unit roles and manual formation control
+   - Squad artifacts (max 3) and drill system for bonuses
+   - Squad progression with battle experience and cohesion
+   - `SquadFactory` with preset squads and validation
 
-4. **Basic Battle System**  
-   - Turn-based combat loop (attacker/defender phases).  
-   - Damage formula with proficiency and stat modifiers.  
+4. **✅ Basic Battle System (COMPLETED)**  
+   - Ogre Battle-style combat with formation-based attack phases
+   - Complete damage formula: `weapon * (1 + proficiency/100) * stat_modifier * bonuses * resistances`
+   - Formation bonuses: Front row (+10% armor, +5% physical), Back row (+15% ranged, -10% physical taken)
+   - Initiative system, counter-attacks, and smart target selection
+   - Experience rewards, weapon proficiency gains, and detailed battle logging
+   - `BattleEngine` with comprehensive combat mechanics and statistics
 
-5. **UI/UX Prototype**  
-   - React components for squad editor (drag-and-drop units).  
-   - Battle screen with unit portraits and HP bars.  
+5. **✅ UI/UX Prototype (COMPLETED)**  
+   - Complete React + TypeScript frontend with modern styling
+   - Home page with dashboard, quick actions, and game statistics
+   - Units page with creation, management, filtering, and detailed unit views
+   - Squad Editor with drag-and-drop formation management and visual positioning
+   - Battle page with 3-phase combat: setup, execution, and comprehensive results
+   - Zustand state management with full game integration
+   - Responsive design with game-themed styling and animations
 
 #### **Tech Tasks:**  
 - ✅ **Exception system implementation (COMPLETED)**
-- Set up React + TypeScript project.  
-- Create unit/squad state management (Redux/Context API).  
-- Implement basic Canvas/PixiJS rendering for battle grid.  
+- ✅ **Core unit system with races, archetypes, and factory (COMPLETED)**
+- ✅ **Squad system with formation management and leadership (COMPLETED)**
+- ✅ **Battle system with Ogre Battle-style combat mechanics (COMPLETED)**
+- ✅ **Complete React + TypeScript frontend with all game features (COMPLETED)**
+- ✅ **Zustand state management with full game integration (COMPLETED)**
+- ✅ **Responsive UI with drag-and-drop formation editor (COMPLETED)**  
 
 #### **Dependencies:**  
 - None (isolated frontend prototype).  

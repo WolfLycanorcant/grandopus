@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', sans-serif;
+  }
+  
+  body {
+    @apply bg-slate-900 text-slate-100 min-h-screen;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cinzel', serif;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900;
+  }
+  
+  .btn-primary {
+    @apply btn bg-primary-600 hover:bg-primary-700 text-white focus:ring-primary-500;
+  }
+  
+  .btn-secondary {
+    @apply btn bg-secondary-600 hover:bg-secondary-700 text-white focus:ring-secondary-500;
+  }
+  
+  .btn-outline {
+    @apply btn border-2 border-slate-600 hover:border-slate-500 text-slate-300 hover:text-slate-200 hover:bg-slate-800;
+  }
+  
+  .btn-danger {
+    @apply btn bg-red-600 hover:bg-red-700 text-white focus:ring-red-500;
+  }
+  
+  .card {
+    @apply bg-slate-800 rounded-xl border border-slate-700 shadow-lg;
+  }
+  
+  .card-header {
+    @apply px-6 py-4 border-b border-slate-700;
+  }
+  
+  .card-body {
+    @apply px-6 py-4;
+  }
+  
+  .input {
+    @apply w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  }
+  
+  .select {
+    @apply input appearance-none cursor-pointer;
+  }
+  
+  .formation-slot {
+    @apply w-20 h-20 border-2 border-dashed border-slate-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:border-slate-500;
+  }
+  
+  .formation-slot.occupied {
+    @apply border-solid border-primary-500 bg-primary-500/10;
+  }
+  
+  .formation-slot.front-row {
+    @apply border-red-500/50;
+  }
+  
+  .formation-slot.back-row {
+    @apply border-blue-500/50;
+  }
+  
+  .unit-card {
+    @apply card p-4 cursor-pointer transition-all duration-200 hover:shadow-xl hover:scale-105;
+  }
+  
+  .unit-card.selected {
+    @apply ring-2 ring-primary-500 ring-offset-2 ring-offset-slate-900;
+  }
+  
+  .stat-bar {
+    @apply w-full bg-slate-700 rounded-full h-2 overflow-hidden;
+  }
+  
+  .stat-bar-fill {
+    @apply h-full transition-all duration-300;
+  }
+  
+  .hp-bar {
+    @apply stat-bar-fill bg-gradient-to-r from-red-600 to-red-400;
+  }
+  
+  .exp-bar {
+    @apply stat-bar-fill bg-gradient-to-r from-blue-600 to-blue-400;
+  }
+  
+  .battle-log {
+    @apply bg-slate-800 rounded-lg p-4 max-h-96 overflow-y-auto font-mono text-sm;
+  }
+  
+  .battle-log-entry {
+    @apply py-1 border-b border-slate-700 last:border-b-0;
+  }
+  
+  .battle-log-attack {
+    @apply text-red-400;
+  }
+  
+  .battle-log-damage {
+    @apply text-orange-400;
+  }
+  
+  .battle-log-heal {
+    @apply text-green-400;
+  }
+  
+  .battle-log-info {
+    @apply text-slate-400;
+  }
+}
