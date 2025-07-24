@@ -34,6 +34,7 @@ interface GameActions {
   // Unit actions
   createUnit: (config: Parameters<typeof UnitFactory.createUnit>[0]) => void
   createRandomUnit: (level?: number) => void
+  addUnit: (unit: Unit) => void
   selectUnit: (unit: Unit | null) => void
   deleteUnit: (unitId: string) => void
 
@@ -127,6 +128,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }))
     } catch (error) {
       set({ error: error instanceof Error ? error.message : 'Failed to create random unit' })
+    }
+  },
+
+  addUnit: (unit) => {
+    try {
+      set((state) => ({
+        units: [...state.units, unit],
+        error: null
+      }))
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Failed to add unit' })
     }
   },
 

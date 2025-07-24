@@ -5,6 +5,7 @@ import { SquadMovementPanel } from '../components/SquadMovementPanel'
 import { AIOverviewPanel } from '../components/AIStatusPanel'
 import { AITestPanel } from '../components/AITestPanel'
 import { AIActivityFeed, AIActivityIndicator } from '../components/AIActivityFeed'
+import { useSettings } from '../contexts/SettingsContext'
 import {
   HexCoordinate,
   MapTile,
@@ -56,6 +57,8 @@ export function OverworldPage() {
     endTurn,
     error
   } = useGameStore()
+
+  const { settingsState } = useSettings()
 
   // Initialize overworld if not already done
   useEffect(() => {
@@ -125,8 +128,8 @@ export function OverworldPage() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
-      {/* AI Activity Indicator */}
-      <AIActivityIndicator />
+      {/* AI Activity Indicator - Only show if AI info is enabled */}
+      {settingsState.settings.showAIInfo && <AIActivityIndicator />}
       
       {/* Header */}
       <div className="bg-slate-800 border-b border-slate-700 p-4">
@@ -357,14 +360,14 @@ export function OverworldPage() {
             )}
           </div>
 
-          {/* AI Overview Panel */}
-          <AIOverviewPanel />
+          {/* AI Overview Panel - Only show if AI info is enabled */}
+          {settingsState.settings.showAIInfo && <AIOverviewPanel />}
 
-          {/* AI Activity Feed */}
-          <AIActivityFeed />
+          {/* AI Activity Feed - Only show if AI info is enabled */}
+          {settingsState.settings.showAIInfo && <AIActivityFeed />}
 
-          {/* AI Test Panel (Development) */}
-          <AITestPanel />
+          {/* AI Test Panel (Development) - Only show if AI info is enabled */}
+          {settingsState.settings.showAIInfo && <AITestPanel />}
 
           {/* Quick Stats */}
           {strategicOverview && (

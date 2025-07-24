@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Menu, X, ChevronLeft, ChevronRight, Home, Users, Sword, Map, Settings, HelpCircle } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
+import { useSettings } from '../../contexts/SettingsContext'
 
 /**
  * Responsive Layout Components
@@ -15,38 +16,61 @@ interface NavigationItem {
   badge?: string | number
 }
 
-const NAVIGATION_ITEMS: NavigationItem[] = [
-  {
-    id: 'home',
-    label: 'Home',
-    icon: <Home className="h-5 w-5" />,
-    path: '/'
-  },
-  {
-    id: 'units',
-    label: 'Units',
-    icon: <Users className="h-5 w-5" />,
-    path: '/units'
-  },
-  {
-    id: 'squads',
-    label: 'Squads',
-    icon: <Users className="h-5 w-5" />,
-    path: '/squads'
-  },
-  {
-    id: 'battle',
-    label: 'Battle',
-    icon: <Sword className="h-5 w-5" />,
-    path: '/battle'
-  },
-  {
-    id: 'overworld',
-    label: 'Overworld',
-    icon: <Map className="h-5 w-5" />,
-    path: '/overworld'
+const getNavigationItems = (showHomeTab: boolean): NavigationItem[] => {
+  const items: NavigationItem[] = [];
+  
+  // Only add Home tab if enabled in settings
+  if (showHomeTab) {
+    items.push({
+      id: 'home',
+      label: 'Home',
+      icon: <Home className="h-5 w-5" />,
+      path: '/'
+    });
   }
-]
+  
+  // Add other navigation items
+  items.push(
+    {
+      id: 'recruitment',
+      label: 'Recruitment',
+      icon: <Users className="h-5 w-5" />,
+      path: '/recruitment'
+    },
+    {
+      id: 'units',
+      label: 'Units',
+      icon: <Users className="h-5 w-5" />,
+      path: '/units'
+    },
+    {
+      id: 'squads',
+      label: 'Squads',
+      icon: <Users className="h-5 w-5" />,
+      path: '/squads'
+    },
+    {
+      id: 'battle',
+      label: 'Battle',
+      icon: <Sword className="h-5 w-5" />,
+      path: '/battle'
+    },
+    {
+      id: 'overworld',
+      label: 'Overworld',
+      icon: <Map className="h-5 w-5" />,
+      path: '/overworld'
+    },
+    {
+      id: 'campaign',
+      label: 'Campaign',
+      icon: <Map className="h-5 w-5" />,
+      path: '/campaign'
+    }
+  );
+  
+  return items;
+}
 
 interface ResponsiveLayoutProps {
   children: React.ReactNode
@@ -58,6 +82,10 @@ export function ResponsiveLayout({ children, showTutorial = false }: ResponsiveL
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const location = useLocation()
+  const { settingsState } = useSettings()
+  
+  // Get navigation items based on settings
+  const navigationItems = getNavigationItems(settingsState.settings.showHomeTab)
 
   // Detect mobile screen size
   useEffect(() => {
@@ -105,7 +133,7 @@ export function ResponsiveLayout({ children, showTutorial = false }: ResponsiveL
           </div>
 
           <nav className="mt-8">
-            {NAVIGATION_ITEMS.map(item => (
+            {navigationItems.map(item => (
               <NavigationLink
                 key={item.id}
                 item={item}
@@ -157,7 +185,7 @@ export function ResponsiveLayout({ children, showTutorial = false }: ResponsiveL
         <div className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm">
           <div className="fixed top-16 left-0 right-0 bg-slate-800 border-b border-slate-700 shadow-xl">
             <nav className="p-4 space-y-2">
-              {NAVIGATION_ITEMS.map(item => (
+              {navigationItems.map(item => (
                 <Link
                   key={item.id}
                   to={item.path}

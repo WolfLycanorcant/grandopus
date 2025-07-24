@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useGameStore } from '../stores/gameStore'
 import { BattleTestPanel } from '../components/BattleTestPanel'
+import { CampaignTestPanel } from '../components/CampaignTestPanel'
+import { SettingsPanel } from '../components/SettingsPanel'
+import { useSettings } from '../contexts/SettingsContext'
 import { 
   Users, 
   Sword, 
@@ -15,7 +18,8 @@ import {
   Zap,
   Shield,
   Heart,
-  TrendingUp
+  TrendingUp,
+  BookOpen
 } from 'lucide-react'
 import {
   ResponsiveGrid,
@@ -46,6 +50,7 @@ export function HomePage() {
     error
   } = useGameStore()
 
+  const { settingsManager, settingsState } = useSettings()
   const [toasts, setToasts] = useState<any[]>([])
   const [showWelcome, setShowWelcome] = useState(false)
 
@@ -177,15 +182,26 @@ export function HomePage() {
       <ToastManager toasts={toasts} onRemove={removeToast} />
 
       {/* Header */}
-      <div className="text-center">
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-          Welcome to Grand Opus
-        </h1>
-        <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
-          Command squads of diverse units in tactical battles. 
-          Build your army, master formations, and conquer the realm in this 
-          deep strategic war game.
-        </p>
+      <div className="relative">
+        <div className="text-center">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            Welcome to Grand Opus
+          </h1>
+          <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
+            Command squads of diverse units in tactical battles. 
+            Build your army, master formations, and conquer the realm in this 
+            deep strategic war game.
+          </p>
+        </div>
+        
+        {/* Settings Button */}
+        <button
+          onClick={() => settingsManager.openSettings()}
+          className="absolute top-0 right-0 p-3 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+          title="Settings"
+        >
+          <Settings className="h-6 w-6" />
+        </button>
       </div>
 
       {/* Quick Stats Dashboard */}
@@ -221,11 +237,11 @@ export function HomePage() {
         
         <QuickInfo
           title="Gold"
-          value={playerResources.GOLD?.toLocaleString() || '0'}
+          value={playerResources.gold?.toLocaleString() || '0'}
           subtitle="Available resources"
           icon={<BarChart3 className="h-5 w-5" />}
           color="purple"
-          trend={playerResources.GOLD > 500 ? 'up' : 'down'}
+          trend={playerResources.gold > 500 ? 'up' : 'down'}
         />
 
         <QuickInfo
@@ -271,11 +287,11 @@ export function HomePage() {
           </div>
         </button>
 
-        <Link to="/squads" className="card hover:bg-slate-700 transition-colors">
+        <Link to="/recruitment" className="card hover:bg-slate-700 transition-colors">
           <div className="card-body text-center">
             <Users className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-            <h3 className="font-semibold text-white">Squad Editor</h3>
-            <p className="text-sm text-slate-400">Manage formations</p>
+            <h3 className="font-semibold text-white">Unit Recruitment</h3>
+            <p className="text-sm text-slate-400">Recruit & train units</p>
           </div>
         </Link>
 
@@ -345,21 +361,19 @@ export function HomePage() {
           </div>
         </Link>
 
-        <div className="card bg-slate-700/50">
+        <Link to="/campaign" className="card hover:bg-slate-700 transition-colors">
           <div className="card-body">
             <div className="flex items-center space-x-4">
-              <div className="h-12 w-12 bg-slate-600 rounded-lg flex items-center justify-center">
-                <span className="text-slate-400 text-xs">Soon</span>
-              </div>
+              <BookOpen className="h-12 w-12 text-purple-500" />
               <div>
-                <h3 className="text-lg font-semibold text-slate-300">Campaign Mode</h3>
-                <p className="text-sm text-slate-500">
-                  Story-driven campaigns with unique challenges and rewards (Coming Soon)
+                <h3 className="text-lg font-semibold text-white">Campaign Mode</h3>
+                <p className="text-sm text-slate-400">
+                  Story-driven campaigns with unique challenges and progressive rewards
                 </p>
               </div>
             </div>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Recent Activity */}
@@ -427,6 +441,16 @@ export function HomePage() {
 
       {/* Battle Test Panel */}
       <BattleTestPanel />
+
+      {/* Campaign Test Panel */}
+      <CampaignTestPanel />
+
+      {/* Settings Panel */}
+      <SettingsPanel 
+        settingsManager={settingsManager}
+        isOpen={settingsState.isSettingsOpen}
+        onClose={() => settingsManager.closeSettings()}
+      />
 
       {/* Getting Started */}
       <div className="card">
