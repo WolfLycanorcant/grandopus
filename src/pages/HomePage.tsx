@@ -4,6 +4,7 @@ import { useGameStore } from '../stores/gameStore'
 import { BattleTestPanel } from '../components/BattleTestPanel'
 import { CampaignTestPanel } from '../components/CampaignTestPanel'
 import { SettingsPanel } from '../components/SettingsPanel'
+import { UnitCreationConfirmModal } from '../components/UnitCreationConfirmModal'
 import { useSettings } from '../contexts/SettingsContext'
 import { 
   Users, 
@@ -53,6 +54,8 @@ export function HomePage() {
   const { settingsManager, settingsState } = useSettings()
   const [toasts, setToasts] = useState<any[]>([])
   const [showWelcome, setShowWelcome] = useState(false)
+  const [showUnitCreationModal, setShowUnitCreationModal] = useState(false)
+  const [pendingUnitConfig, setPendingUnitConfig] = useState<any>(null)
 
   // Initialize game on first load
   useEffect(() => {
@@ -107,12 +110,57 @@ export function HomePage() {
   }
 
   const handleCreateUnit = () => {
-    createRandomUnit(1)
-    addToast({
-      type: 'success',
-      title: 'Unit Created!',
-      message: 'A new random unit has been added to your army'
+    // Generate random unit config for confirmation
+    const races = ['Human', 'Elf', 'Dwarf', 'Orc', 'Goblin', 'Beast', 'Dragon', 'Griffon']
+    const archetypes = ['Warrior', 'Archer', 'Mage', 'Cleric', 'Rogue']
+    
+    const randomRace = races[Math.floor(Math.random() * races.length)]
+    
+    // Handle creature races properly
+    const isCreature = ['Beast', 'Dragon', 'Griffon'].includes(randomRace)
+    const randomArchetype = isCreature ? 'Creature' : archetypes[Math.floor(Math.random() * archetypes.length)]
+    
+    // Generate appropriate names
+    const creatureNames = {
+      'Beast': ['Fang', 'Claw', 'Storm', 'Shadow', 'Thunder', 'Blaze', 'Frost', 'Ember'],
+      'Dragon': ['Pyraxis', 'Frostmaw', 'Stormwing', 'Shadowflame', 'Goldscale', 'Ironhide', 'Voidclaw', 'Sunfire'],
+      'Griffon': ['Skytalon', 'Windcrest', 'Stormfeather', 'Goldbeak', 'Swiftclaw', 'Cloudwing', 'Starsoar', 'Thunderstrike']
+    }
+    
+    const unitName = isCreature 
+      ? creatureNames[randomRace as keyof typeof creatureNames][Math.floor(Math.random() * creatureNames[randomRace as keyof typeof creatureNames].length)]
+      : `${randomRace} ${randomArchetype}`
+    
+    setPendingUnitConfig({
+      name: unitName,
+      race: randomRace,
+      archetype: randomArchetype,
+      level: 1
     })
+    setShowUnitCreationModal(true)
+  }
+
+  const handleConfirmUnitCreation = async () => {
+    if (!pendingUnitConfig) return
+    
+    const result = await createRandomUnit(pendingUnitConfig.level)
+    
+    if (result.success) {
+      addToast({
+        type: 'success',
+        title: 'Unit Created!',
+        message: `${pendingUnitConfig.name} has been added to your army`
+      })
+    } else {
+      addToast({
+        type: 'error',
+        title: 'Creation Failed',
+        message: result.error || 'Failed to create unit'
+      })
+    }
+    
+    setShowUnitCreationModal(false)
+    setPendingUnitConfig(null)
   }
 
   const handleCreateSquad = () => {
@@ -266,7 +314,7 @@ export function HomePage() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <button
-          onClick={() => createRandomUnit(1)}
+          onClick={handleCreateUnit}
           className="card hover:bg-slate-700 transition-colors cursor-pointer"
         >
           <div className="card-body text-center">
@@ -277,7 +325,7 @@ export function HomePage() {
         </button>
 
         <button
-          onClick={() => createSquadFromPreset('BALANCED_STARTER')}
+          onClick={handleCreateSquad}
           className="card hover:bg-slate-700 transition-colors cursor-pointer"
         >
           <div className="card-body text-center">
@@ -374,6 +422,20 @@ export function HomePage() {
             </div>
           </div>
         </Link>
+
+        <Link to="/store" className="card hover:bg-slate-700 transition-colors">
+          <div className="card-body">
+            <div className="flex items-center space-x-4">
+              <ShoppingCart className="h-12 w-12 text-green-500" />
+              <div>
+                <h3 className="text-lg font-semibold text-white">Grand Opus Store</h3>
+                <p className="text-sm text-slate-400">
+                  Purchase weapons, armor, potions, magical items, artifacts, and beast supplies
+                </p>
+              </div>
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* Recent Activity */}
@@ -450,6 +512,18 @@ export function HomePage() {
         settingsManager={settingsManager}
         isOpen={settingsState.isSettingsOpen}
         onClose={() => settingsManager.closeSettings()}
+      />
+
+      {/* Unit Creation Confirmation Modal */}
+      <UnitCreationConfirmModal
+        isOpen={showUnitCreationModal}
+        onClose={() => {
+          setShowUnitCreationModal(false)
+          setPendingUnitConfig(null)
+        }}
+        onConfirm={handleConfirmUnitCreation}
+        unitConfig={pendingUnitConfig || { name: '', race: '', archetype: '', level: 1 }}
+        playerGold={playerResources.gold || 0}
       />
 
       {/* Getting Started */}

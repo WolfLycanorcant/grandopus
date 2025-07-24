@@ -77,6 +77,159 @@ A **deeply customizable squad-based tactical war game** blending **XCOM-style co
 
 ---
 
+## **3.3 Unit Creation & Cost System**
+### **Economic Unit Creation**
+- **Custom Unit Creation:** Players can create units for **2x recruitment cost**
+- **Cost Calculation:**
+  - Base recruitment cost (varies by race/archetype)
+  - Level scaling: +20% per level above 1
+  - Custom creation multiplier: 2x base cost
+- **Confirmation System:** All unit creation requires cost confirmation
+- **Resource Management:** Gold becomes strategic resource for army building
+
+### **Creature System**
+- **Creature Races:** Beast, Dragon, Griffon don't use traditional archetypes
+- **Natural Abilities:** Creatures rely on innate powers rather than trained skills
+- **Specialized Costs:** Creatures have higher base costs reflecting their power
+- **Automatic Classification:** System automatically assigns "Creature" type to beast races
+
+---
+
+## **3.4 Beast Care & Companion System** 🐉
+### **Core Beast Care Mechanics**
+
+#### **💖 Bonding / Affection System**
+- **Bond Level (0–100):** Represents trust and loyalty
+- **Impact:** Affects obedience, combat performance, and special abilities
+- **How to Raise Bond:**
+  - Petting / grooming sessions
+  - Feeding favorite foods
+  - Training or play activities
+  - Defending the beast or healing it in combat
+- **How Bond Falls:**
+  - Neglect or poor care
+  - Abuse or overworking
+  - Sending into unwinnable fights
+
+#### **🍖 Feeding System**
+- **Diet Types:** 
+  - Carnivore (raw meat, fresh kills)
+  - Infernal (sulfur, brimstone, fire essence)
+  - Elemental (magical crystals, pure energy)
+  - Omnivore (varied diet, fruits and meat)
+  - Magical Essence (mana potions, enchanted items)
+- **Food Effects:**
+  - **Preferred Foods:** Boost bonding and performance
+  - **Tolerated Foods:** Normal maintenance effect
+  - **Hated/Poisonous:** Causes illness or disobedience
+- **Feeding Schedule Impact:**
+  - **Starving:** Aggression, sickness, disobedience
+  - **Overfeeding:** Laziness, bloating, reduced performance
+
+#### **🛏 Rest & Shelter System**
+- **Species-Specific Needs:**
+  - **Griffons:** Nesting areas with wind or altitude
+  - **Hellhounds:** Warm, dark dens or lava-fueled lairs
+  - **Dragons:** Treasure hoards, lava pools, open caverns
+  - **Beasts:** Natural environments matching their origin
+- **Rest Deprivation Effects:**
+  - Slow health regeneration
+  - Combat debuffs or mood issues
+  - Refusal to fly, fight, or bond
+
+#### **🧼 Hygiene / Maintenance**
+- **Grooming Activities:**
+  - Brushing fur/feathers
+  - Claw sharpening
+  - Scale/oil treatments
+  - Parasite removal
+- **Benefits:** Removes parasites, boosts affection
+- **Cultural Aspects:** Some species see grooming as dominance ritual
+
+#### **🧠 Training & Skill Progression**
+- **Beast Leveling:** Creatures level alongside players
+- **Training Methods:**
+  - Combat practice sessions
+  - Target training (dummies, obstacle courses)
+  - Behavioral correction (stop attacking allies)
+- **Skill Trees:**
+  - **Combat:** Tackle, Flame Breath, Pounce, Aerial Strike
+  - **Utility:** Carry rider, detect enemies, track scent
+  - **Loyalty/Support:** Intervene when player hurt, defend other beasts
+
+#### **🧬 Health, Sickness & Injury**
+- **Health Conditions:**
+  - **Wounds:** Require rest or medicine
+  - **Diseases:** Curses, blights, parasites, magical illness
+  - **Mental Conditions:** PTSD from battles, trauma responses
+- **Treatment Methods:**
+  - Herbalism and natural remedies
+  - Magical potions and healing spells
+  - Professional Beast Healer services
+  - Rest and recovery time
+
+#### **🔥 Temperament System**
+- **Temperament Profiles:**
+  - **Aggressive:** Hard to control but powerful in combat
+  - **Loyal:** Follows orders reliably, protects player
+  - **Skittish:** Easily frightened but fast and evasive
+  - **Proud:** Requires respect, refuses degrading tasks
+  - **Curious:** Explores areas, finds hidden items
+- **Dynamic Evolution:** Temperament changes based on care and experiences
+
+#### **🧳 Gear & Customization**
+- **Beast Equipment:**
+  - Saddles for riding
+  - Armor for protection
+  - Elemental enhancements
+  - Aesthetic upgrades (runes, braids, glowing effects)
+- **Bonding Requirements:** High bond needed for gear acceptance
+- **Player Pride System:** Customization affects player satisfaction
+
+### **🏞 Daily Beast Care Cycle**
+- **Morning Routine:**
+  - Feed beast appropriate diet
+  - Clean den/lair/nest
+  - Grooming session
+- **Midday Activities:**
+  - Training session or combat
+  - Apply healing if injured
+  - Provide snacks/treats
+- **Evening Wind-down:**
+  - Bonding activities (petting, playing, flying)
+  - Return to appropriate shelter
+  - Rest preparation
+
+### **⚔️ Combat Integration**
+- **Well-Cared Beast Benefits:**
+  - Combat performance buffs
+  - Complex command obedience
+  - Instinctive player protection
+- **Neglected Beast Penalties:**
+  - Reduced damage output
+  - Disobedience in critical moments
+  - May flee from difficult battles
+
+### **🏞 Exploration Integration**
+- **Beast Abilities:**
+  - Fly across cliffs and obstacles
+  - Detect hidden enemies
+  - Track scents and trails
+  - Access unique areas
+
+### **📖 Story Integration**
+- **Narrative Impact:** Beast care affects story outcomes
+- **Special Quests:** Beast-specific storylines unlock
+- **Multiple Endings:** Different conclusions based on beast relationships
+
+### **💡 Advanced Beast Mechanics**
+- **Breeding System:** Raise eggs/cubs from well-cared beasts
+- **Emotional Feedback:** Animations and sounds indicate mood
+- **Beast Relationships:** Creatures form bonds with each other
+- **Legacy System:** Offspring inherit traits from parents
+
+---
+
 ## **4. Customization**  
 ### **4.1 Equipment (Paper Doll)**  
 - **Slots:**  

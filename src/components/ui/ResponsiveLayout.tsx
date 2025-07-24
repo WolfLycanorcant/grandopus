@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Menu, X, ChevronLeft, ChevronRight, Home, Users, Sword, Map, Settings, HelpCircle } from 'lucide-react'
+import { Menu, X, ChevronLeft, ChevronRight, Home, Users, Sword, Map, Settings, HelpCircle, ShoppingCart } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useSettings } from '../../contexts/SettingsContext'
 
@@ -66,6 +66,12 @@ const getNavigationItems = (showHomeTab: boolean): NavigationItem[] => {
       label: 'Campaign',
       icon: <Map className="h-5 w-5" />,
       path: '/campaign'
+    },
+    {
+      id: 'store',
+      label: 'Store',
+      icon: <ShoppingCart className="h-5 w-5" />,
+      path: '/store'
     }
   );
   

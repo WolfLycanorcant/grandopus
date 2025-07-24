@@ -44,7 +44,20 @@ export enum Archetype {
   KNIGHT = 'knight',
   ROGUE = 'rogue',
   BEAST_TAMER = 'beast_tamer',
-  DWARVEN_ENGINEER = 'dwarven_engineer'
+  DWARVEN_ENGINEER = 'dwarven_engineer',
+  CREATURE = 'creature' // For beasts, dragons, and other creatures without traditional classes
+}
+
+/**
+ * Races that are creatures and don't use traditional archetypes
+ */
+export const CREATURE_RACES = [Race.BEAST, Race.DRAGON, Race.GRIFFON] as const;
+
+/**
+ * Check if a race is a creature type that doesn't use traditional archetypes
+ */
+export function isCreatureRace(race: Race): boolean {
+  return CREATURE_RACES.includes(race as any);
 }
 
 // WeaponType and DamageType are imported from equipment system above

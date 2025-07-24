@@ -132,6 +132,65 @@ export const BASIC_RECRUITABLE_UNITS: RecruitableUnit[] = [
     growthRates: { hp: 2, attack: 1, defense: 1.5, speed: 1.5, magic: 4 }
   },
 
+  // Creature Units - Beasts, Dragons, Griffons
+  {
+    id: 'dire-wolf',
+    name: 'Dire Wolf',
+    race: 'Beast',
+    archetype: 'Creature',
+    description: 'A massive predatory wolf with enhanced strength and pack instincts.',
+    baseStats: { hp: 70, attack: 18, defense: 12, speed: 14, magic: 2 },
+    cost: { gold: 180 },
+    requirements: [
+      { type: 'Achievement', value: 'beast-tamer', description: 'Successfully tame a wild creature', isMet: false }
+    ],
+    rarity: 'Uncommon',
+    availability: 'Achievement',
+    unlockConditions: ['Learn beast taming techniques'],
+    specialAbilities: ['Pack Hunter', 'Savage Bite', 'Howl'],
+    growthRates: { hp: 4, attack: 3, defense: 2, speed: 2.5, magic: 0.5 }
+  },
+  {
+    id: 'young-dragon',
+    name: 'Young Dragon',
+    race: 'Dragon',
+    archetype: 'Creature',
+    description: 'A juvenile dragon with immense potential and natural magical abilities.',
+    baseStats: { hp: 100, attack: 25, defense: 20, speed: 10, magic: 20 },
+    cost: { gold: 600, reputation: 100 },
+    requirements: [
+      { type: 'Achievement', value: 'dragon-encounter', description: 'Survive an encounter with an adult dragon', isMet: false },
+      { type: 'Level', value: 20, description: 'Reach Commander Level 20', isMet: false }
+    ],
+    rarity: 'Epic',
+    availability: 'Achievement',
+    maxRecruits: 2,
+    currentRecruits: 0,
+    unlockConditions: ['Gain the respect of dragonkind'],
+    specialAbilities: ['Dragon Breath', 'Flight', 'Magic Resistance', 'Draconic Might'],
+    growthRates: { hp: 5, attack: 4, defense: 3.5, speed: 1.5, magic: 4 }
+  },
+  {
+    id: 'war-griffon',
+    name: 'War Griffon',
+    race: 'Griffon',
+    archetype: 'Creature',
+    description: 'A majestic flying creature trained for aerial combat and reconnaissance.',
+    baseStats: { hp: 80, attack: 20, defense: 15, speed: 18, magic: 5 },
+    cost: { gold: 400, influence: 25 },
+    requirements: [
+      { type: 'Achievement', value: 'sky-master', description: 'Win 10 battles using aerial units', isMet: false },
+      { type: 'Campaign', value: 'mountain-peaks', description: 'Complete Mountain Peaks campaign', isMet: false }
+    ],
+    rarity: 'Rare',
+    availability: 'Achievement',
+    maxRecruits: 3,
+    currentRecruits: 0,
+    unlockConditions: ['Earn the trust of the mountain griffons'],
+    specialAbilities: ['Aerial Strike', 'Keen Sight', 'Dive Bomb', 'Wind Mastery'],
+    growthRates: { hp: 3.5, attack: 3.5, defense: 2.5, speed: 3, magic: 1.5 }
+  },
+
   // Legendary Units - Ultimate Rewards
   {
     id: 'ancient-guardian',

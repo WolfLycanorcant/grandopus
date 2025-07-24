@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { Unit, UnitFactory } from '../core/units'
+import { UnitCostCalculator } from '../core/units/UnitCostCalculator'
 import { Squad, SquadFactory, SQUAD_PRESETS } from '../core/squads'
 import { BattleManager, BattleResult, BattleTurn, BattleState } from '../core/battle'
 import { OverworldManager, HexCoordinate, BuildingType, Faction, ResourceType } from '../core/overworld'
@@ -32,11 +33,15 @@ interface GameState {
 
 interface GameActions {
   // Unit actions
-  createUnit: (config: Parameters<typeof UnitFactory.createUnit>[0]) => void
-  createRandomUnit: (level?: number) => void
+  createUnit: (config: Parameters<typeof UnitFactory.createUnit>[0]) => Promise<{ success: boolean; unit?: Unit; error?: string }>
+  createRandomUnit: (level?: number) => Promise<{ success: boolean; unit?: Unit; error?: string }>
   addUnit: (unit: Unit) => void
   selectUnit: (unit: Unit | null) => void
   deleteUnit: (unitId: string) => void
+  
+  // Unit cost utilities
+  getUnitCreationCost: (race: string, archetype: string, level?: number) => ReturnType<typeof UnitCostCalculator.calculateUnitCreationCost>
+  canAffordUnit: (race: string, archetype: string, level?: number) => ReturnType<typeof UnitCostCalculator.canAffordUnit>
 
   // Squad actions
   createSquad: (config: Parameters<typeof SquadFactory.createSquad>[0]) => void
@@ -92,7 +97,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   battleLog: [],
   overworldManager: null,
   playerResources: {
-    [ResourceType.GOLD]: 500,
+    [ResourceType.GOLD]: 1000, // Increased starting gold for unit creation
     [ResourceType.WOOD]: 100,
     [ResourceType.STONE]: 50,
     [ResourceType.STEEL]: 25,
@@ -105,29 +110,95 @@ export const useGameStore = create<GameStore>((set, get) => ({
   error: null,
 
   // Unit actions
-  createUnit: (config) => {
+  createUnit: async (config) => {
     try {
+      const state = get()
+      const { race, archetype, level = 1 } = config
+      
+      // Calculate cost
+      const affordabilityCheck = UnitCostCalculator.canAffordUnit(
+        state.playerResources[ResourceType.GOLD] || 0,
+        race,
+        archetype,
+        level
+      )
+
+      if (!affordabilityCheck.canAfford) {
+        const error = `Insufficient gold! Need ${affordabilityCheck.shortfall} more gold to create this unit.`
+        set({ error })
+        return { success: false, error }
+      }
+
+      // Create the unit
       const unit = UnitFactory.createUnit(config)
+      
+      // Deduct gold
+      const newGold = (state.playerResources[ResourceType.GOLD] || 0) - affordabilityCheck.cost.totalCost
+      
       set((state) => ({
         units: [...state.units, unit],
         selectedUnit: unit,
+        playerResources: {
+          ...state.playerResources,
+          [ResourceType.GOLD]: newGold
+        },
         error: null
       }))
+
+      return { success: true, unit }
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : 'Failed to create unit' })
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create unit'
+      set({ error: errorMessage })
+      return { success: false, error: errorMessage }
     }
   },
 
-  createRandomUnit: (level = 1) => {
+  createRandomUnit: async (level = 1) => {
     try {
+      // Generate a random unit configuration first to calculate cost
+      const races = ['Human', 'Elf', 'Dwarf', 'Orc', 'Goblin']
+      const archetypes = ['Warrior', 'Archer', 'Mage', 'Cleric', 'Rogue']
+      
+      const randomRace = races[Math.floor(Math.random() * races.length)]
+      const randomArchetype = archetypes[Math.floor(Math.random() * archetypes.length)]
+      
+      const state = get()
+      
+      // Calculate cost
+      const affordabilityCheck = UnitCostCalculator.canAffordUnit(
+        state.playerResources[ResourceType.GOLD] || 0,
+        randomRace,
+        randomArchetype,
+        level
+      )
+
+      if (!affordabilityCheck.canAfford) {
+        const error = `Insufficient gold! Need ${affordabilityCheck.shortfall} more gold to create a random unit.`
+        set({ error })
+        return { success: false, error }
+      }
+
+      // Create the unit
       const unit = UnitFactory.createRandomUnit(level)
+      
+      // Deduct gold
+      const newGold = (state.playerResources[ResourceType.GOLD] || 0) - affordabilityCheck.cost.totalCost
+      
       set((state) => ({
         units: [...state.units, unit],
         selectedUnit: unit,
+        playerResources: {
+          ...state.playerResources,
+          [ResourceType.GOLD]: newGold
+        },
         error: null
       }))
+
+      return { success: true, unit }
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : 'Failed to create random unit' })
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create random unit'
+      set({ error: errorMessage })
+      return { success: false, error: errorMessage }
     }
   },
 
@@ -151,6 +222,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
       units: state.units.filter(unit => unit.id !== unitId),
       selectedUnit: state.selectedUnit?.id === unitId ? null : state.selectedUnit
     }))
+  },
+
+  // Unit cost utilities
+  getUnitCreationCost: (race, archetype, level = 1) => {
+    return UnitCostCalculator.calculateUnitCreationCost(race, archetype, level)
+  },
+
+  canAffordUnit: (race, archetype, level = 1) => {
+    const state = get()
+    return UnitCostCalculator.canAffordUnit(
+      state.playerResources[ResourceType.GOLD] || 0,
+      race,
+      archetype,
+      level
+    )
   },
 
   // Squad actions

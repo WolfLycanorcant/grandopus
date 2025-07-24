@@ -98,6 +98,21 @@ This achievement represents the completion of the core strategic gameplay loop, 
 
 7. **✅ Skill System Foundation (COMPLETED)**  
    - Complete skill tree architecture (General, Combat, Magic, Tactics, Survival, Weapon Mastery)
+
+8. **✅ Unit Creation Cost System (COMPLETED)**  
+   - Economic unit creation with 2x recruitment cost multiplier
+   - Dynamic cost calculation based on race, archetype, and level
+   - Professional confirmation modal with cost breakdown
+   - Real-time affordability checking and resource validation
+   - Integration with recruitment data for accurate pricing
+   - Strategic resource management through gold economy
+
+9. **✅ Creature System Implementation (COMPLETED)**  
+   - Beast, Dragon, Griffon races with automatic "Creature" archetype
+   - Specialized UI for creature creation (no class selection)
+   - Creature-specific naming, abilities, and lore integration
+   - Proper cost calculation for creature units
+   - Enhanced recruitment data with creature units (Dire Wolf, Young Dragon, War Griffon)
    - Job Points (JP) system for skill unlocking
    - Skill node types (stat boosts, passives, actives, weapon skills, formations)
    - Skill activation triggers and effects
@@ -225,7 +240,23 @@ This achievement represents the completion of the core strategic gameplay loop, 
 **Objective:** Add advanced gameplay mechanics and content depth.  
 
 #### **Key Features:**  
-1. **📋 Equipment Crafting & Enhancement System (HIGH PRIORITY)**  
+1. **🐉 Beast Care & Companion System (HIGHEST PRIORITY)**  
+   - **Bonding/Affection System:** 0-100 bond levels affecting obedience and performance
+   - **Feeding System:** Species-specific diets (Carnivore, Infernal, Elemental, Omnivore, Magical Essence)
+   - **Rest & Shelter System:** Creature-specific habitat requirements (nests, lairs, hoards)
+   - **Hygiene & Maintenance:** Grooming, claw sharpening, parasite removal
+   - **Training & Skill Progression:** Combat practice, behavioral correction, skill trees
+   - **Health & Medical System:** Wounds, diseases, mental conditions, and treatment
+   - **Temperament System:** Dynamic personality traits (Aggressive, Loyal, Skittish, Proud, Curious)
+   - **Gear & Customization:** Beast-specific equipment and aesthetic upgrades
+   - **Daily Care Cycles:** Morning feeding, midday training, evening bonding
+   - **Combat Integration:** Well-cared beasts get buffs, neglected ones get penalties
+   - **Exploration Benefits:** Flying, tracking, detection abilities
+   - **Story Integration:** Beast relationships affect narrative outcomes
+   - **Advanced Mechanics:** Breeding system, emotional feedback, legacy traits
+   - **Status:** Design complete, ready for implementation
+
+2. **📋 Equipment Crafting & Enhancement System (HIGH PRIORITY)**  
    - Blacksmith building functionality for weapon/armor creation
    - Resource-based crafting recipes (steel + wood = sword)
    - Equipment upgrade system (+1, +2, +3 enhancements)

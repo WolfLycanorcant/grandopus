@@ -11,6 +11,7 @@ import { Overworld3DPage } from './pages/Overworld3DPage'
 import { UnitsPage } from './pages/UnitsPage'
 import { CampaignPage } from './pages/CampaignPage'
 import { RecruitmentPage } from './pages/RecruitmentPage'
+import { StorePage } from './pages/StorePage'
 
 function AppRoutes() {
   const { settingsState } = useSettings()
@@ -36,6 +37,7 @@ function AppRoutes() {
         <Route path="/overworld3d" element={<Overworld3DPage />} />
         <Route path="/campaign" element={<CampaignPage />} />
         <Route path="/recruitment" element={<RecruitmentPage />} />
+        <Route path="/store" element={<StorePage />} />
         
         {/* Hidden home route accessible via direct URL when developer mode is unlocked */}
         {settingsState.settings.showHomeTab && (
