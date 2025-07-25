@@ -69,6 +69,9 @@ export interface TrainingOpponent {
   description: string;
   difficulty: 'Novice' | 'Adept' | 'Expert' | 'Master' | 'Grandmaster';
   level: number;
+  cost: {
+    gold: number;
+  };
   stats: {
     hp: number;
     attack: number;
@@ -92,7 +95,8 @@ export interface TrainingSession {
   duration: number; // in minutes
   status: 'Active' | 'Completed' | 'Failed' | 'Cancelled';
   battleGrid: TrainingBattleGrid;
-  timer?: number; // ms remaining
+  endTime: Date; // When the training will complete
+  timer?: number; // Remaining time in milliseconds
 }
 
 export interface TrainingBattleGrid {

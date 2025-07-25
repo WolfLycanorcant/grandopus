@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Target, 
-  Sword, 
-  Shield, 
-  Clock, 
-  Trophy, 
+import {
+  Target,
+  Sword,
+  Shield,
+  Clock,
+  Trophy,
   Star,
   Play,
   CheckCircle,
@@ -13,7 +13,8 @@ import {
   Crown,
   Lock,
   TrendingUp,
-  Grid3X3
+  Grid3X3,
+  Coins
 } from 'lucide-react';
 import { RecruitmentManager } from '../core/recruitment/RecruitmentManager';
 import { RecruitmentState, TrainingOpponent, TrainingSession } from '../core/recruitment/types';
@@ -22,12 +23,14 @@ interface TrainingGroundsPanelProps {
   recruitmentManager: RecruitmentManager;
   availableUnits: any[]; // This would be your actual Unit type
   onTrainingComplete?: (unitId: string, result: any) => void;
+  playerGold?: number;
 }
 
-export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({ 
-  recruitmentManager, 
+export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
+  recruitmentManager,
   availableUnits,
-  onTrainingComplete 
+  onTrainingComplete,
+  playerGold = 0
 }) => {
   const [recruitmentState, setRecruitmentState] = useState<RecruitmentState>(recruitmentManager.getState());
   const [selectedUnit, setSelectedUnit] = useState<any>(null);
@@ -45,67 +48,57 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
 
   // Update timers every second
   useEffect(() => {
-    const unsubscribe = recruitmentManager.subscribe(setRecruitmentState);
-    
-    const updateTimers = () => {
-      const activeSessions = recruitmentManager.getState().trainingGrounds.activeTraining;
-      const newRemainingTimes = { ...remainingTimes };
-      let hasChanges = false;
-      
-      activeSessions.forEach(session => {
+    const unsubscribe = recruitmentManager.subscribe((newState) => {
+      setRecruitmentState(newState);
+
+      // Update remaining times based on the new state
+      const newRemainingTimes: Record<string, number> = {};
+      newState.trainingGrounds.activeTraining.forEach(session => {
         if (session.timer !== undefined) {
-          const secondsLeft = Math.ceil(session.timer / 1000);
-          if (newRemainingTimes[session.id] !== secondsLeft) {
-            newRemainingTimes[session.id] = secondsLeft;
-            hasChanges = true;
-          }
+          newRemainingTimes[session.id] = Math.ceil(session.timer / 1000);
         }
       });
-      
-      if (hasChanges) {
-        setRemainingTimes(newRemainingTimes);
+      setRemainingTimes(newRemainingTimes);
+    });
+
+    // Initial state update
+    const initialState = recruitmentManager.getState();
+    setRecruitmentState(initialState);
+
+    const initialTimes: Record<string, number> = {};
+    initialState.trainingGrounds.activeTraining.forEach(session => {
+      if (session.timer !== undefined) {
+        initialTimes[session.id] = Math.ceil(session.timer / 1000);
       }
-    };
-    
-    // Initial update
-    updateTimers();
-    
-    // Set up interval for updates
-    const intervalId = setInterval(updateTimers, 1000);
-    
+    });
+    setRemainingTimes(initialTimes);
+
     // Clean up
     return () => {
       unsubscribe();
-      clearInterval(intervalId);
-    };
-    
-    setRemainingTimes(newRemainingTimes);
-
-    const timer = setInterval(() => {
-      const updatedTimes = { ...remainingTimes };
-      let anyUpdated = false;
-      const now = Date.now();
-
-      activeSessions.forEach(session => {
-        const endTime = new Date(session.startTime.getTime() + session.duration * 60000);
-        const timeLeft = Math.max(0, Math.ceil((endTime.getTime() - now) / 1000));
-        
-        if (updatedTimes[session.id] !== timeLeft) {
-          updatedTimes[session.id] = timeLeft;
-          anyUpdated = true;
-        }
-      });
-
-      if (anyUpdated) {
-        setRemainingTimes(updatedTimes);
-      }
-    }, 1000);
-
-    return () => {
-      clearInterval(timer);
-      unsubscribe();
     };
   }, [recruitmentManager]);
+
+  // Update countdown timers every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRemainingTimes(prev => {
+        const updated = { ...prev };
+        let hasChanges = false;
+
+        Object.keys(updated).forEach(sessionId => {
+          if (updated[sessionId] > 0) {
+            updated[sessionId] -= 1;
+            hasChanges = true;
+          }
+        });
+
+        return hasChanges ? updated : prev;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -134,13 +127,10 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
     if (session) {
       setSelectedOpponent(null);
       setSelectedUnit(null);
+    } else {
+      // Training failed - likely due to insufficient gold
+      console.warn('Training session could not be started - check gold requirements');
     }
-  };
-
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const getSessionStatus = (session: TrainingSession) => {
@@ -157,7 +147,7 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
       const newRemainingTimes = { ...remainingTimes };
       delete newRemainingTimes[sessionId];
       setRemainingTimes(newRemainingTimes);
-      
+
       onTrainingComplete?.(record.unitId, record);
     }
   };
@@ -169,7 +159,7 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
 
   if (selectedOpponent && selectedUnit) {
     const canTrain = recruitmentManager.canTrainAgainst(selectedOpponent.id, selectedUnit.level || 1);
-    
+
     return (
       <div className="bg-slate-800 rounded-lg p-6 max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
@@ -220,9 +210,9 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
                     </div>
                   </div>
                 </div>
-                
+
                 <p className="text-slate-300 text-sm">{selectedOpponent.description}</p>
-                
+
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-slate-400">Level:</span>
@@ -290,6 +280,30 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
 
           {/* Rewards and Training */}
           <div className="space-y-4">
+            {/* Training Cost */}
+            <div className="bg-slate-700 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <Coins className="h-5 w-5 text-yellow-400" />
+                Training Cost
+              </h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Coins className="h-4 w-4 text-yellow-400" />
+                  <span className="text-slate-300">Gold:</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`font-medium ${playerGold >= (selectedOpponent.cost?.gold || 0) ? 'text-white' : 'text-red-400'}`}>
+                    {(selectedOpponent.cost?.gold || 0).toLocaleString()}
+                  </span>
+                  {playerGold < (selectedOpponent.cost?.gold || 0) && (
+                    <span className="text-red-400 text-sm">
+                      (Need {((selectedOpponent.cost?.gold || 0) - playerGold).toLocaleString()} more)
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Training Rewards */}
             <div className="bg-slate-700 rounded-lg p-4">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
@@ -324,15 +338,14 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
                       const isPlayer = x === 1 && y === 4;
                       const isOpponent = x === 6 && y === 4;
                       const isObstacle = Math.random() > 0.85;
-                      
+
                       return (
                         <div
                           key={i}
-                          className={`w-6 h-6 border border-slate-600 flex items-center justify-center text-xs ${
-                            isPlayer ? 'bg-blue-500' : 
+                          className={`w-6 h-6 border border-slate-600 flex items-center justify-center text-xs ${isPlayer ? 'bg-blue-500' :
                             isOpponent ? 'bg-red-500' :
-                            isObstacle ? 'bg-slate-600' : 'bg-slate-700'
-                          }`}
+                              isObstacle ? 'bg-slate-600' : 'bg-slate-700'
+                            }`}
                         >
                           {isPlayer && '👤'}
                           {isOpponent && '🎯'}
@@ -362,13 +375,25 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
             {/* Start Training */}
             <div className="pt-4">
               {canTrain.canTrain ? (
-                <button
-                  onClick={() => handleStartTraining(selectedUnit.id, selectedOpponent.id)}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Play className="h-5 w-5" />
-                  Start Training Session
-                </button>
+                playerGold >= (selectedOpponent.cost?.gold || 0) ? (
+                  <button
+                    onClick={() => handleStartTraining(selectedUnit.id, selectedOpponent.id)}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Play className="h-5 w-5" />
+                    Start Training ({(selectedOpponent.cost?.gold || 0).toLocaleString()} Gold)
+                  </button>
+                ) : (
+                  <div className="w-full bg-red-600/20 border border-red-500 text-red-400 font-medium py-3 px-4 rounded-lg text-center">
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                      <Coins className="h-4 w-4" />
+                      Insufficient Gold
+                    </div>
+                    <div className="text-xs">
+                      Need {((selectedOpponent.cost?.gold || 0) - playerGold).toLocaleString()} more gold
+                    </div>
+                  </div>
+                )
               ) : (
                 <div className="w-full bg-slate-600 text-slate-400 font-medium py-3 px-4 rounded-lg text-center">
                   <div className="flex items-center justify-center gap-2 mb-1">
@@ -392,7 +417,7 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
           <Target className="h-6 w-6 text-green-400" />
           Training Grounds
         </h2>
-        
+
         <div className="flex items-center gap-2 text-sm text-slate-300">
           <TrendingUp className="h-4 w-4" />
           <span>Active Sessions: {activeTraining.length}</span>
@@ -405,11 +430,10 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 px-4 py-2 rounded text-sm transition-colors ${
-              activeTab === tab
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-300 hover:text-white'
-            }`}
+            className={`flex-1 px-4 py-2 rounded text-sm transition-colors ${activeTab === tab
+              ? 'bg-blue-600 text-white'
+              : 'text-slate-300 hover:text-white'
+              }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
@@ -459,17 +483,16 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
                   Change Unit
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {availableOpponents.map((opponent) => {
                   const canTrain = recruitmentManager.canTrainAgainst(opponent.id, selectedUnit.level || 1);
-                  
+
                   return (
                     <div
                       key={opponent.id}
-                      className={`bg-slate-700 rounded-lg p-4 cursor-pointer transition-all hover:bg-slate-600 ${
-                        !canTrain.canTrain ? 'opacity-50' : ''
-                      }`}
+                      className={`bg-slate-700 rounded-lg p-4 cursor-pointer transition-all hover:bg-slate-600 ${!canTrain.canTrain ? 'opacity-50' : ''
+                        }`}
                       onClick={() => canTrain.canTrain && setSelectedOpponent(opponent)}
                     >
                       <div className="flex items-start justify-between mb-3">
@@ -490,8 +513,9 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
                           <span>•</span>
                           <span>{opponent.battleCount} battles</span>
                         </div>
-                        <div className="text-yellow-400">
-                          {opponent.rewards.length} rewards
+                        <div className={`flex items-center gap-1 ${playerGold >= (opponent.cost?.gold || 0) ? 'text-yellow-400' : 'text-red-400'}`}>
+                          <Coins className="h-3 w-3" />
+                          <span>{(opponent.cost?.gold || 0).toLocaleString()}</span>
                         </div>
                       </div>
 
@@ -523,7 +547,7 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
               {activeTraining.map((session) => {
                 const opponent = availableOpponents.find(o => o.id === session.opponentId);
                 const unit = availableUnits.find(u => u.id === session.unitId);
-                
+
                 return (
                   <div key={session.id} className="bg-slate-700 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -554,6 +578,43 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
                           className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-sm"
                         >
                           Draw
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Training Progress */}
+                    <div className="mt-3 pt-3 border-t border-slate-600">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400 text-sm">Time Remaining:</span>
+                        <span className="text-white text-sm font-medium">
+                          {remainingTimes[session.id] !== undefined ? (
+                            remainingTimes[session.id] > 0 ? (
+                              <span className="text-blue-400">{formatTime(remainingTimes[session.id])}</span>
+                            ) : (
+                              <span className="text-green-400">Complete!</span>
+                            )
+                          ) : (
+                            <span className="text-yellow-400">Starting...</span>
+                          )}
+                        </span>
+                      </div>
+                      {remainingTimes[session.id] > 0 && (
+                        <div className="mt-2">
+                          <div className="w-full bg-slate-600 rounded-full h-2">
+                            <div
+                              className="bg-blue-500 h-2 rounded-full transition-all duration-1000"
+                              style={{
+                                width: `${Math.max(0, 100 - (remainingTimes[session.id] / (session.duration * 60)) * 100)}%`
+                              }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-slate-400 mt-1">
+                            <span>0:00</span>
+                            <span>{session.duration}:00</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -577,10 +638,9 @@ export const TrainingGroundsPanel: React.FC<TrainingGroundsPanelProps> = ({
                 <div key={record.sessionId} className="bg-slate-700 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${
-                        record.result === 'Victory' ? 'bg-green-400' :
+                      <div className={`w-3 h-3 rounded-full ${record.result === 'Victory' ? 'bg-green-400' :
                         record.result === 'Defeat' ? 'bg-red-400' : 'bg-yellow-400'
-                      }`} />
+                        }`} />
                       <div>
                         <h4 className="text-white font-medium">
                           {record.unitName} vs {record.opponentName}

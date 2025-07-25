@@ -224,6 +224,7 @@ export const TRAINING_OPPONENTS: TrainingOpponent[] = [
     description: 'A basic training dummy for learning combat fundamentals.',
     difficulty: 'Novice',
     level: 1,
+    cost: { gold: 10 },
     stats: { hp: 30, attack: 5, defense: 5, speed: 3, magic: 0 },
     abilities: [],
     rewards: [
@@ -241,6 +242,7 @@ export const TRAINING_OPPONENTS: TrainingOpponent[] = [
     description: 'A veteran sergeant who trains new recruits in basic combat.',
     difficulty: 'Novice',
     level: 3,
+    cost: { gold: 15 },
     stats: { hp: 40, attack: 8, defense: 7, speed: 6, magic: 1 },
     abilities: ['Basic Strike', 'Encourage'],
     rewards: [
@@ -261,6 +263,7 @@ export const TRAINING_OPPONENTS: TrainingOpponent[] = [
     description: 'An experienced knight captain who teaches advanced swordplay.',
     difficulty: 'Adept',
     level: 8,
+    cost: { gold: 30 },
     stats: { hp: 65, attack: 15, defense: 12, speed: 9, magic: 3 },
     abilities: ['Power Strike', 'Defensive Stance', 'Rally'],
     rewards: [
@@ -282,6 +285,7 @@ export const TRAINING_OPPONENTS: TrainingOpponent[] = [
     description: 'A learned mage who teaches the fundamentals of magic.',
     difficulty: 'Adept',
     level: 10,
+    cost: { gold: 40 },
     stats: { hp: 45, attack: 6, defense: 8, speed: 7, magic: 18 },
     abilities: ['Fireball', 'Magic Shield', 'Mana Burn'],
     rewards: [
@@ -305,6 +309,7 @@ export const TRAINING_OPPONENTS: TrainingOpponent[] = [
     description: 'A legendary weapon master who has perfected all forms of combat.',
     difficulty: 'Expert',
     level: 15,
+    cost: { gold: 75 },
     stats: { hp: 85, attack: 22, defense: 16, speed: 14, magic: 5 },
     abilities: ['Weapon Mastery', 'Counter Attack', 'Flurry', 'Perfect Strike'],
     rewards: [
@@ -329,6 +334,7 @@ export const TRAINING_OPPONENTS: TrainingOpponent[] = [
     description: 'A deadly assassin who teaches the arts of stealth and precision.',
     difficulty: 'Master',
     level: 20,
+    cost: { gold: 125 },
     stats: { hp: 70, attack: 28, defense: 12, speed: 20, magic: 8 },
     abilities: ['Stealth Strike', 'Shadow Step', 'Poison Blade', 'Assassination'],
     rewards: [
@@ -353,6 +359,7 @@ export const TRAINING_OPPONENTS: TrainingOpponent[] = [
     description: 'An ancient dragon who tests only the most worthy warriors.',
     difficulty: 'Grandmaster',
     level: 30,
+    cost: { gold: 200 },
     stats: { hp: 200, attack: 35, defense: 25, speed: 15, magic: 30 },
     abilities: ['Dragon Breath', 'Ancient Magic', 'Tail Sweep', 'Intimidating Roar', 'Legendary Resistance'],
     rewards: [

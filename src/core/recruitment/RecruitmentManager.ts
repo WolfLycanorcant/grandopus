@@ -14,13 +14,17 @@ import {
 } from './RecruitmentData';
 import { Unit } from '../units/Unit';
 import { Race, Archetype } from '../units/types';
+import { ResourceType } from '../overworld/types';
 
 export class RecruitmentManager {
   private state: RecruitmentState;
   private listeners: Array<(state: RecruitmentState) => void> = [];
+  private trainingTimers: Map<string, NodeJS.Timeout> = new Map();
+  private gameStoreActions: any; // Will be injected
   private timerInterval?: NodeJS.Timeout; // NodeJS.Timeout in Node, number in browser
 
-  constructor() {
+  constructor(gameStoreActions?: any) {
+    this.gameStoreActions = gameStoreActions;
     this.state = {
       pool: {
         availableUnits: [...BASIC_RECRUITABLE_UNITS],
@@ -127,22 +131,89 @@ export class RecruitmentManager {
   }
 
   private createUnitFromRecruitableUnit(src: RecruitableUnit): Unit {
-    const race = src.race.toLowerCase() as Race;
+    console.log('Creating unit from source:', {
+      id: src.id,
+      name: src.name,
+      race: src.race,
+      archetype: src.archetype
+    });
+
+    // Remove the .toLowerCase() calls since the data is already in correct format
+    const race = src.race as Race;
     const archetype = src.archetype as Archetype;
     const id = `${src.id}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+    console.log('Converted values:', { race, archetype });
+    console.log('Valid races:', Object.values(Race));
+    console.log('Valid archetypes:', Object.values(Archetype));
+
     return new Unit(id, src.name, race, archetype, 1);
   }
 
   /* ------------------------------------------------------------------ */
   /*  REQUIREMENTS / RESOURCES                                           */
   /* ------------------------------------------------------------------ */
-  private hasEnoughResources(_cost: any): boolean {
-    // TODO: integrate with player inventory
-    return true;
+  private hasEnoughResources(cost: any): boolean {
+    console.log('🔍 hasEnoughResources called with:', cost);
+    
+    if (!this.gameStoreActions || !this.gameStoreActions.playerResources) {
+      console.warn('No game store available, allowing recruitment');
+      return true;
+    }
+
+    // Safety check for cost parameter
+    if (!cost) {
+      console.warn('Cost parameter is null/undefined, allowing action');
+      return true;
+    }
+
+    if (typeof cost !== 'object') {
+      console.warn('Cost parameter is not an object:', typeof cost, cost);
+      return true;
+    }
+
+    // Extra safety check for gold property
+    let goldCost = 0;
+    try {
+      goldCost = cost.gold || 0;
+    } catch (error) {
+      console.error('Error accessing cost.gold:', error);
+      return true;
+    }
+    // Access gold using ResourceType.GOLD key
+    const currentGold = this.gameStoreActions.playerResources[ResourceType.GOLD] || 0;
+
+    console.log('💰 Resource check:', {
+      required: goldCost,
+      available: currentGold,
+      canAfford: currentGold >= goldCost
+    });
+
+    return currentGold >= goldCost;
   }
 
-  private deductResources(_cost: any): void {
-    // TODO: integrate with player inventory
+  private deductResources(cost: any): void {
+    if (!this.gameStoreActions || !this.gameStoreActions.deductGold) {
+      console.warn('No game store available or deductGold method missing, skipping resource deduction');
+      return;
+    }
+
+    // Safety check for cost parameter
+    if (!cost || typeof cost !== 'object') {
+      console.warn('Invalid cost parameter for deduction:', cost);
+      return;
+    }
+
+    const goldCost = cost.gold || 0;
+    if (goldCost > 0) {
+      console.log('💸 Deducting resources:', {
+        goldCost,
+        oldGold: this.gameStoreActions.playerResources[ResourceType.GOLD] || 0
+      });
+
+      // Use the deductGold method from gameStore
+      this.gameStoreActions.deductGold(goldCost);
+    }
   }
 
   private checkUnitRequirements(unit: RecruitableUnit): boolean {
@@ -227,16 +298,47 @@ export class RecruitmentManager {
   /* ---------------- SESSION START / COMPLETE -------------------------- */
   public startTrainingSession(unitId: string, opponentId: string): TrainingSession | null {
     const opponent = this.state.trainingGrounds.availableOpponents.find(o => o.id === opponentId);
-    if (!opponent) return null;
+    if (!opponent) {
+      console.warn(`Training opponent not found: ${opponentId}`);
+      return null;
+    }
+
+    // Ensure opponent has cost defined, default to free if not
+    const trainingCost = opponent.cost || { gold: 0 };
+    
+    console.log('🔍 Opponent cost check:', {
+      opponentId: opponent.id,
+      originalCost: opponent.cost,
+      finalCost: trainingCost
+    });
+    
+    console.log(`🎯 Starting training with ${opponent.name}:`, {
+      opponentId,
+      cost: trainingCost,
+      difficulty: opponent.difficulty
+    });
+
+    // Check if player has enough gold for training
+    if (!this.hasEnoughResources(trainingCost)) {
+      console.warn(`Insufficient gold for training with ${opponent.name}. Cost: ${trainingCost.gold || 0}`);
+      return null;
+    }
+
+    // Deduct training cost
+    this.deductResources(trainingCost);
 
     const durationMinutes = this.calculateTrainingDuration(opponent.difficulty);
     const durationMs = durationMinutes * 60 * 1000;
+
+    const startTime = new Date();
+    const endTime = new Date(startTime.getTime() + durationMs);
 
     const session: TrainingSession = {
       id: `training-${Date.now()}`,
       unitId,
       opponentId,
-      startTime: new Date(),
+      startTime,
+      endTime,
       duration: durationMinutes,
       status: 'Active',
       battleGrid: this.generateTrainingGrid(opponent.difficulty),

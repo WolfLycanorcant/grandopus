@@ -77,6 +77,9 @@ interface GameActions {
   exportSave: (slotId: string) => boolean
   importSave: (file: File, targetSlotId: string) => Promise<boolean>
 
+  // Resource actions
+  deductGold: (amount: number) => void
+
   // Utility actions
   setError: (error: string | null) => void
   setLoading: (loading: boolean) => void
@@ -801,6 +804,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   importSave: async (file, targetSlotId) => {
     return await SaveManager.importSave(file, targetSlotId)
+  },
+
+  // Resource actions
+  deductGold: (amount) => {
+    try {
+      const state = get()
+      const currentGold = state.playerResources[ResourceType.GOLD] || 0
+      
+      if (currentGold < amount) {
+        throw new Error(`Insufficient gold! Have ${currentGold}, need ${amount}`)
+      }
+      
+      const newGold = currentGold - amount
+      
+      set((state) => ({
+        playerResources: {
+          ...state.playerResources,
+          [ResourceType.GOLD]: newGold
+        },
+        error: null
+      }))
+      
+      console.log(`💸 Deducted ${amount} gold. Remaining: ${newGold}`)
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to deduct gold'
+      set({ error: errorMessage })
+      throw error
+    }
   },
 
   initializeGame: () => {

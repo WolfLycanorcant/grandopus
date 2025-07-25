@@ -19,11 +19,13 @@ import { RecruitmentState, RecruitableUnit } from '../core/recruitment/types';
 interface RecruitmentPanelProps {
   recruitmentManager: RecruitmentManager;
   onUnitRecruited?: (unit: any) => void;
+  playerGold?: number;
 }
 
 export const RecruitmentPanel: React.FC<RecruitmentPanelProps> = ({ 
   recruitmentManager, 
-  onUnitRecruited 
+  onUnitRecruited,
+  playerGold = 0
 }) => {
   const [recruitmentState, setRecruitmentState] = useState<RecruitmentState>(recruitmentManager.getState());
   const [selectedUnit, setSelectedUnit] = useState<RecruitableUnit | null>(null);
@@ -204,7 +206,16 @@ export const RecruitmentPanel: React.FC<RecruitmentPanelProps> = ({
                     <Coins className="h-4 w-4 text-yellow-400" />
                     <span className="text-slate-300">Gold:</span>
                   </div>
-                  <span className="text-white font-medium">{selectedUnit.cost.gold}</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`font-medium ${playerGold >= selectedUnit.cost.gold ? 'text-white' : 'text-red-400'}`}>
+                      {selectedUnit.cost.gold.toLocaleString()}
+                    </span>
+                    {playerGold < selectedUnit.cost.gold && (
+                      <span className="text-red-400 text-sm">
+                        (Need {(selectedUnit.cost.gold - playerGold).toLocaleString()} more)
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {selectedUnit.cost.reputation && (
                   <div className="flex items-center justify-between">
@@ -270,13 +281,25 @@ export const RecruitmentPanel: React.FC<RecruitmentPanelProps> = ({
             {/* Recruit Button */}
             <div className="pt-4">
               {canRecruit.canRecruit ? (
-                <button
-                  onClick={() => handleRecruitUnit(selectedUnit.id)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Users className="h-5 w-5" />
-                  Recruit Unit
-                </button>
+                playerGold >= selectedUnit.cost.gold ? (
+                  <button
+                    onClick={() => handleRecruitUnit(selectedUnit.id)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Users className="h-5 w-5" />
+                    Recruit Unit ({selectedUnit.cost.gold.toLocaleString()} Gold)
+                  </button>
+                ) : (
+                  <div className="w-full bg-red-600/20 border border-red-500 text-red-400 font-medium py-3 px-4 rounded-lg text-center">
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                      <Coins className="h-4 w-4" />
+                      Insufficient Gold
+                    </div>
+                    <div className="text-xs">
+                      Need {(selectedUnit.cost.gold - playerGold).toLocaleString()} more gold
+                    </div>
+                  </div>
+                )
               ) : (
                 <div className="w-full bg-slate-600 text-slate-400 font-medium py-3 px-4 rounded-lg text-center">
                   <div className="flex items-center justify-center gap-2 mb-1">
@@ -304,7 +327,8 @@ export const RecruitmentPanel: React.FC<RecruitmentPanelProps> = ({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-sm">
             <Coins className="h-4 w-4 text-yellow-400" />
-            <span className="text-slate-300">Gold: 1000</span> {/* This would come from game state */}
+            <span className="text-slate-300">Gold: </span>
+            <span className="text-yellow-400 font-medium">{playerGold.toLocaleString()}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Crown className="h-4 w-4 text-purple-400" />
@@ -394,9 +418,9 @@ export const RecruitmentPanel: React.FC<RecruitmentPanelProps> = ({
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1 text-yellow-400">
+                <div className={`flex items-center gap-1 ${playerGold >= unit.cost.gold ? 'text-yellow-400' : 'text-red-400'}`}>
                   <Coins className="h-3 w-3" />
-                  <span>{unit.cost.gold}</span>
+                  <span>{unit.cost.gold.toLocaleString()}</span>
                 </div>
                 {unit.maxRecruits && (
                   <span className="text-slate-400">
